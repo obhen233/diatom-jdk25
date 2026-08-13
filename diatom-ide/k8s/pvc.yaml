@@ -1,0 +1,14 @@
+# diatom-ide 工作区持久卷
+# 保存用户项目与 SQLite 配置。按集群存储类替换 storageClassName（空则用默认 StorageClass）。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: diatom-ide-workspace
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""   # 默认 StorageClass；如集群有专用存储类请填写
+  resources:
+    requests:
+      storage: 10Gi

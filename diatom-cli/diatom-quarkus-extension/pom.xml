@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.obhen233</groupId>
+        <artifactId>diatom-cli</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>diatom-quarkus-extension</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Diatom Quarkus Extension</name>
+    <description>Diatom CLI - Quarkus runtime + deployment (Gateway/Worker/Child/Adapter cloud-native)</description>
+
+    <modules>
+        <module>runtime</module>
+        <module>deployment</module>
+    </modules>
+
+    <properties>
+        <quarkus.version>3.38.0</quarkus.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Quarkus BOM manages all io.quarkus.* / io.smallrye.* versions -->
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>${quarkus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-maven-plugin</artifactId>
+                    <version>${quarkus.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

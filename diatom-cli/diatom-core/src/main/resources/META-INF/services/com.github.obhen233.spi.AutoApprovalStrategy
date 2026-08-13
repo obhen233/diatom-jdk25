@@ -1,0 +1,2 @@
+# File-based whitelist strategy - reads ~/.diatom/approval-whitelist.properties
+com.github.obhen233.core.security.FileBasedWhitelistStrategy

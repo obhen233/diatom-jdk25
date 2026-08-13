@@ -1,0 +1,127 @@
+
+ 1. 配置路径
+
+  在 ~/.diatom/application.properties 中添加：
+
+  gateway.router.local.training-import-path=/path/to/training-data.json
+
+  或通过系统属性传入：
+
+  -Dgateway.router.local.training-import-path=/path/to/training-data.json
+
+  2. 启动时自动导入
+
+  配置好路径后，diatom-router-local 会在启动时自动扫描该文件：
+
+  - 已有类别 → 从中学习新关键词（如 "login page crash" 学习到 bug_fix 类别）
+  - 新类别（如 finance）→ 自动创建新的 CategoryDef，从训练消息中提取中英文关键词
+  - 所有学习到的关键词权重 = 0.26（LLM 确认，初始频率 = 3）
+  - 数据同时落入 TrainingDataStore（~/.diatom/router-training.json），用于未来 SVM 模型训练
+
+  3. 手动触发导入（编程方式）
+
+  LocalRequestRouterImpl router = new LocalRequestRouterImpl();
+  int count = router.importTrainingData(Paths.get("/path/to/training-data.json"));
+  // count = 导入的消息总数，失败返回 -1
+
+  4. 格式说明
+
+  ┌──────────┬────────┬────────────────────────────────┐
+  │   字段   │  类型  │              说明              │
+  ├──────────┼────────┼────────────────────────────────┤
+  │ message  │ string │ 用户原始请求（支持中英文混合） │
+  ├──────────┼────────┼────────────────────────────────┤
+  │ category │ string │ 对应的路由类别 ID              │
+  └──────────┴────────┴────────────────────────────────┘
+
+  5. 类别 ID 参考（已有内置类别）
+
+  bug_fix, feature, refactoring, testing, documentation, devops, code_review, architecture, data_analysis, mathematics,
+  reasoning, planning, execution, coordination, security, communication, pipeline, file_processing, vision, sensor,
+  motion_control, embedded, bi_analytics, ml_training, troubleshooting, quality_assurance, automation, reporting
+
+  也可以使用任意自定义 ID（如上面的 finance），系统会自动创建新类别。
+
+  6. 效果验证
+
+  导入后用包含训练词汇的请求测试，观察路由是否命中正确类别：
+
+  User: "login page crashes on submit"
+    → routed as 'bug_fix' (learned from "login page crash")
+
+  User: "quarterly financial report"
+    → routed as 'finance' (newly created category from training data)
+
+
+[
+  {
+    "id": "refactoring",
+    "chineseKeywords": ["重构", "优化", "清理", "重组", "重写"],
+    "englishKeywords": ["refactor", "optimize", "cleanup", "rewrite", "restructure"],
+    "capabilities": ["code", "refactoring"],
+    "description": "Code refactoring and optimization"
+  },
+  {
+    "id": "bug_fix",
+    "chineseKeywords": ["bug", "修复", "错误", "异常", "崩溃", "故障", "问题"],
+    "englishKeywords": ["bug", "fix", "error", "crash", "fault", "issue", "defect"],
+    "capabilities": ["code", "debugging"],
+    "description": "Bug fixing and debugging"
+  },
+  {
+    "id": "testing",
+    "chineseKeywords": ["测试", "单元测试", "集成测试", "自动化测试", "用例"],
+    "englishKeywords": ["test", "unit test", "integration test", "coverage"],
+    "capabilities": ["testing", "code"],
+    "description": "Writing and running tests"
+  },
+  {
+    "id": "documentation",
+    "chineseKeywords": ["文档", "注释", "说明", "手册", "readme"],
+    "englishKeywords": ["document", "readme", "javadoc", "wiki"],
+    "capabilities": ["documentation"],
+    "description": "Writing documentation and comments"
+  },
+  {
+    "id": "code_review",
+    "chineseKeywords": ["审查", "检查", "评审", "复核"],
+    "englishKeywords": ["review", "inspect", "audit"],
+    "capabilities": ["code review"],
+    "description": "Code review and inspection"
+  },
+  {
+    "id": "architecture",
+    "chineseKeywords": ["架构", "设计", "模式", "方案", "顶层"],
+    "englishKeywords": ["architecture", "design", "pattern", "overview"],
+    "capabilities": ["architecture design"],
+    "description": "Architecture and design planning"
+  },
+  {
+    "id": "devops",
+    "chineseKeywords": ["部署", "发布", "docker", "容器", "流水线", "上线"],
+    "englishKeywords": ["deploy", "ci/cd", "pipeline", "release", "devops"],
+    "capabilities": ["devops"],
+    "description": "DevOps, deployment and CI/CD operations"
+  },
+  {
+    "id": "feature",
+    "chineseKeywords": ["新增", "功能", "实现", "开发", "添加", "编程", "代码", "排序", "写", "编写", "算法"],
+    "englishKeywords": ["feature", "implement", "add", "create", "new"],
+    "capabilities": ["code"],
+    "description": "New feature implementation"
+  },
+  {
+    "id": "data_analysis",
+    "chineseKeywords": ["数据", "分析", "图表", "统计", "可视化"],
+    "englishKeywords": ["data", "analysis", "chart", "statistics", "visualization"],
+    "capabilities": ["data analysis"],
+    "description": "Data analysis and visualization"
+  },
+  {
+    "id": "mathematics",
+    "chineseKeywords": ["数学", "方程", "未知数", "计算", "求解", "加减乘除", "等于", "多少", "求"],
+    "englishKeywords": ["math", "calculate", "equation", "solve", "compute"],
+    "capabilities": ["mathematics"],
+    "description": "Mathematical computation and problem solving"
+  }
+]

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diatom Routing Rules</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+}
+.navbar {
+    background: rgba(30,41,59,0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.navbar-brand { font-size: 18px; font-weight: 600; color: #e2e8f0; }
+.navbar-brand span { color: #60a5fa; }
+.navbar-right { display: flex; align-items: center; gap: 16px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px 24px 40px; }
+
+/* Section headers */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px 12px 0 0;
+    margin-top: 16px;
+}
+.section-header .section-title { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th {
+    background: rgba(51,65,85,0.5);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); white-space: nowrap; }
+table tr:hover td { background: rgba(255,255,255,0.02); }
+table tr:last-child td { border-bottom: none; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-enabled { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-disabled { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-gateway { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-worker { background: rgba(168,85,247,0.15); color: #c084fc; }
+
+.btn-action {
+    padding: 4px 12px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    color: #60a5fa;
+    cursor: pointer;
+    font-size: 12px;
+}
+.btn-action:hover { background: rgba(59,130,246,0.2); }
+.btn-danger {
+    padding: 4px 12px;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 4px;
+    color: #fca5a5;
+    cursor: pointer;
+    font-size: 12px;
+}
+.btn-danger:hover { background: rgba(248,113,113,0.2); }
+.btn-apply {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-apply:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+
+.empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+.empty-state p { font-size: 14px; }
+
+/* Cards */
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.info-card {
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+}
+.info-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.info-card.gateway-rules { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04)); }
+.info-card.gateway-rules::before { background: #3b82f6; }
+.info-card.worker-rules { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.04)); }
+.info-card.worker-rules::before { background: #a855f7; }
+.info-card.active-rules { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); }
+.info-card.active-rules::before { background: #22c55e; }
+.info-card.disabled-rules { background: linear-gradient(135deg, rgba(100,116,139,0.12), rgba(100,116,139,0.04)); }
+.info-card.disabled-rules::before { background: #64748b; }
+.info-card .label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-card .value { font-size: 28px; font-weight: 700; }
+
+/* Tab navigation */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0; }
+.tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: #e2e8f0; }
+.tab-btn.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+.loading-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+.loading-overlay.hidden { display: none; }
+.loading-spinner-lg { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 900px) {
+    .info-cards { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner-lg"></div></div>
+
+<nav class="navbar">
+    <div style="display:flex;align-items:center;">
+        <div class="navbar-brand"><span>Diatom</span> Routing</div>
+        <div class="navbar-tabs" style="display:flex;gap:4px;margin-left:24px;">
+            <a href="/monitor/" style="padding:8px 12px;border-bottom:2px solid transparent;color:#94a3b8;text-decoration:none;font-size:13px;font-weight:500;">Dashboard</a>
+            <a href="/monitor/workspace/" style="padding:8px 12px;border-bottom:2px solid transparent;color:#94a3b8;text-decoration:none;font-size:13px;font-weight:500;">Workspace</a>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <span class="navbar-clock" id="clock"></span>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Summary Cards -->
+    <div class="info-cards">
+        <div class="info-card gateway-rules">
+            <div class="label">Gateway Rules</div>
+            <div class="value" id="statGatewayRules">0</div>
+        </div>
+        <div class="info-card active-rules">
+            <div class="label">Active</div>
+            <div class="value" id="statActiveRules">0</div>
+        </div>
+        <div class="info-card disabled-rules">
+            <div class="label">Disabled</div>
+            <div class="value" id="statDisabledRules">0</div>
+        </div>
+        <div class="info-card worker-rules">
+            <div class="label">Workers with Rules</div>
+            <div class="value" id="statWorkerRules">0</div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="gateway" onclick="switchTab('gateway')">Gateway Rules (EN/中)</button>
+        <button class="tab-btn" data-tab="worker" onclick="switchTab('worker')">Worker Rules (EN/中)</button>
+    </div>
+
+    <!-- Gateway Rules Tab -->
+    <div class="tab-pane active" id="tabGateway">
+        <div class="section-header">
+            <span class="section-title">Gateway Command Rules / 网关命令规则</span>
+            <button class="btn-action" onclick="refreshGatewayRules()">Refresh</button>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Mode / 模式</th>
+                        <th>Type / 类型</th>
+                        <th>Pattern / 模式</th>
+                        <th>Source / 来源</th>
+                        <th>Status / 状态</th>
+                        <th>Action / 操作</th>
+                    </tr>
+                </thead>
+                <tbody id="gatewayRulesBody">
+                    <tr><td colspan="7"><div class="empty-state"><p>Loading...</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Worker Rules Tab -->
+    <div class="tab-pane" id="tabWorker">
+        <div class="section-header">
+            <span class="section-title">Worker Rules / Worker 规则</span>
+            <div>
+                <select id="workerSelect" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#e2e8f0;font-size:12px;outline:none;margin-right:8px;min-width:150px;">
+                    <option value="">Select worker...</option>
+                </select>
+                <button class="btn-action" onclick="refreshWorkerRules()">Load Rules</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type / 类型</th>
+                        <th>Pattern / 模式</th>
+                        <th>Priority / 优先级</th>
+                        <th>Status / 状态</th>
+                        <th>Action / 操作</th>
+                    </tr>
+                </thead>
+                <tbody id="workerRulesBody">
+                    <tr><td colspan="6"><div class="empty-state"><p>Select a worker and click "Load Rules"</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== Auth ==========
+function getToken() { return localStorage.getItem('diatom_monitor_token'); }
+function authHeaders() {
+    var t = getToken();
+    return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+function handleAuthError(r) {
+    if (r.status === 401) { localStorage.removeItem('diatom_monitor_token'); window.location.href = '/monitor/login'; return true; }
+    return false;
+}
+
+// ========== Tab ==========
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === name); });
+    document.querySelectorAll('.tab-pane').forEach(function(t) { t.classList.toggle('active', t.id === 'tab' + name.charAt(0).toUpperCase() + name.slice(1)); });
+    if (name === 'worker') loadWorkerSelect();
+}
+
+// ========== Load workers for select ==========
+function loadWorkerSelect() {
+    fetch('/monitor/api/status', { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            var select = document.getElementById('workerSelect');
+            var currentVal = select.value;
+            select.innerHTML = '<option value="">Select worker...</option>';
+            var workers = data.workers || [];
+            workers.forEach(function(w) {
+                var opt = document.createElement('option');
+                opt.value = w.workerId;
+                opt.textContent = w.workerId + ' (' + w.model + ')';
+                select.appendChild(opt);
+            });
+            if (currentVal) select.value = currentVal;
+        });
+}
+
+// ========== Gateway Rules ==========
+function refreshGatewayRules() {
+    fetch('/monitor/api/rules?target=gateway', { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            var rules = data.rules || [];
+            var tbody = document.getElementById('gatewayRulesBody');
+            updateStats(rules);
+            if (rules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>No gateway rules / 暂无网关规则</p></div></td></tr>';
+                return;
+            }
+            var html = '';
+            rules.forEach(function(r) {
+                var statusBadge = r.enabled ? 'badge-enabled' : 'badge-disabled';
+                var statusText = r.enabled ? 'enabled' : 'disabled';
+                html += '<tr>' +
+                    '<td>' + (r.id || '-') + '</td>' +
+                    '<td><span class="badge badge-' + r.mode + '">' + r.mode + '</span></td>' +
+                    '<td>' + (r.type || '-') + '</td>' +
+                    '<td style="font-family:monospace;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;">' + (r.pattern || '-') + '</td>' +
+                    '<td>' + (r.source || '-') + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + statusText + '</span></td>' +
+                    '<td>' +
+                        '<button class="btn-action" onclick="toggleGatewayRule(' + r.id + ', ' + !r.enabled + ')">' + (r.enabled ? 'Disable' : 'Enable') + '</button>' +
+                    '</td></tr>';
+            });
+            tbody.innerHTML = html;
+        });
+}
+
+function toggleGatewayRule(id, enable) {
+    fetch('/monitor/api/rules', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ action: enable ? 'enable' : 'disable', id: id, target: 'gateway' })
+    }).then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    }).then(function(resp) {
+        if (resp && resp.status === 'ok') refreshGatewayRules();
+        else alert('Failed to toggle rule');
+    });
+}
+
+function updateStats(rules) {
+    var total = rules.length;
+    var active = rules.filter(function(r) { return r.enabled; }).length;
+    document.getElementById('statGatewayRules').textContent = total;
+    document.getElementById('statActiveRules').textContent = active;
+    document.getElementById('statDisabledRules').textContent = total - active;
+}
+
+// ========== Worker Rules ==========
+function refreshWorkerRules() {
+    var workerId = document.getElementById('workerSelect').value;
+    if (!workerId) return;
+    fetch('/monitor/api/rules?target=worker&workerId=' + encodeURIComponent(workerId), { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            var rules = data.rules || [];
+            var tbody = document.getElementById('workerRulesBody');
+            if (rules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>No rules for this worker / 该 Worker 暂无规则</p></div></td></tr>';
+                return;
+            }
+            var html = '';
+            rules.forEach(function(r) {
+                var statusBadge = r.enabled ? 'badge-enabled' : 'badge-disabled';
+                var statusText = r.enabled ? 'enabled' : 'disabled';
+                html += '<tr>' +
+                    '<td>' + (r.id || '-') + '</td>' +
+                    '<td>' + (r.type || '-') + '</td>' +
+                    '<td style="font-family:monospace;font-size:11px;">' + (r.pattern || '-') + '</td>' +
+                    '<td>' + (r.priority !== undefined ? r.priority : '-') + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + statusText + '</span></td>' +
+                    '<td>' +
+                        '<button class="btn-action" onclick="alert(\'Worker rule management via worker command line\')">Manage</button>' +
+                    '</td></tr>';
+            });
+            tbody.innerHTML = html;
+            document.getElementById('statWorkerRules').textContent = rules.length;
+        });
+}
+
+// ========== Init ==========
+function init() {
+    refreshGatewayRules();
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+init();
+</script>
+</body>
+</html>

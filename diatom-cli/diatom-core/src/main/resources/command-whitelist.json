@@ -1,0 +1,456 @@
+{
+  "version": 1,
+  "description": "Command whitelist for diatom-cli sandbox mode",
+  "commands": [
+    {
+      "command": "mvn",
+      "toolType": "maven",
+      "riskLevel": 1
+    },
+    {
+      "command": "git",
+      "toolType": "git",
+      "riskLevel": 1
+    },
+    {
+      "command": "npm",
+      "toolType": "npm",
+      "riskLevel": 1
+    },
+    {
+      "command": "node",
+      "toolType": "node",
+      "riskLevel": 1
+    },
+    {
+      "command": "java",
+      "toolType": "java",
+      "riskLevel": 1
+    },
+    {
+      "command": "javac",
+      "toolType": "java",
+      "riskLevel": 1
+    },
+    {
+      "command": "jar",
+      "toolType": "java",
+      "riskLevel": 2
+    },
+    {
+      "command": "go",
+      "toolType": "go",
+      "riskLevel": 1
+    },
+    {
+      "command": "python",
+      "toolType": "python",
+      "riskLevel": 1
+    },
+    {
+      "command": "python3",
+      "toolType": "python",
+      "riskLevel": 1
+    },
+    {
+      "command": "gradle",
+      "toolType": "gradle",
+      "riskLevel": 1
+    },
+    {
+      "command": "ant",
+      "toolType": "ant",
+      "riskLevel": 1
+    },
+    {
+      "command": "make",
+      "toolType": "make",
+      "riskLevel": 1
+    },
+    {
+      "command": "cmake",
+      "toolType": "cmake",
+      "riskLevel": 1
+    },
+    {
+      "command": "find",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "grep",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "egrep",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "fgrep",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "findstr",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "rg",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ack",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ag",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "cat",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "type",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "tac",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "less",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "more",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "head",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "tail",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "nl",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "wc",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ls",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "dir",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "tree",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ll",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "la",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "pwd",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "whoami",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "hostname",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "uname",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "date",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "time",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "uptime",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "env",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "id",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "echo",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "printenv",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "curl",
+      "toolType": "curl",
+      "riskLevel": 1
+    },
+    {
+      "command": "wget",
+      "toolType": "wget",
+      "riskLevel": 1
+    },
+    {
+      "command": "zip",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "unzip",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "tar",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "gzip",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "gunzip",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "rsync",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "scp",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "ssh",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "cmd",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "copy",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "move",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "del",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "rd",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "mkdir",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "rmdir",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "replace",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "attrib",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "compact",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "tasklist",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "taskkill",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "sc",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "net",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "netuse",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "net share",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "ipconfig",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ping",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "tracert",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "nslookup",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "systeminfo",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "ver",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "vol",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "label",
+      "toolType": "shell",
+      "riskLevel": 1
+    },
+    {
+      "command": "chkdsk",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "sfc",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "dism",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "diskpart",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "bcdedit",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "reg",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "runas",
+      "toolType": "shell",
+      "riskLevel": 2
+    },
+    {
+      "command": "cd",
+      "toolType": "shell",
+      "riskLevel": 0
+    },
+    {
+      "command": "cp",
+      "toolType": "shell",
+      "riskLevel": 1
+    }
+  ]
+}

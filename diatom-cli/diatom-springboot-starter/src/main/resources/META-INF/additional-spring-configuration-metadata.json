@@ -1,0 +1,174 @@
+{
+  "groups": [
+    {
+      "name": "diatom",
+      "type": "com.github.obhen233.starter.DiatomProperties",
+      "description": "Diatom AI programming assistant configuration."
+    },
+    {
+      "name": "diatom.api",
+      "type": "com.github.obhen233.starter.DiatomProperties$Api",
+      "description": "API configuration for the AI model."
+    },
+    {
+      "name": "diatom.app",
+      "type": "com.github.obhen233.starter.DiatomProperties$App",
+      "description": "Application runtime configuration."
+    },
+    {
+      "name": "diatom.agent",
+      "type": "com.github.obhen233.starter.DiatomProperties$Agent",
+      "description": "AI agent execution configuration."
+    },
+    {
+      "name": "diatom.command",
+      "type": "com.github.obhen233.starter.DiatomProperties$Command",
+      "description": "Command sandbox and execution configuration."
+    },
+    {
+      "name": "diatom.core",
+      "type": "com.github.obhen233.starter.DiatomProperties$Core",
+      "description": "Core upgrade configuration."
+    }
+  ],
+  "properties": [
+    {
+      "name": "diatom.api.key",
+      "type": "java.lang.String",
+      "description": "API key for AI model authentication.",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.api.base-url",
+      "type": "java.lang.String",
+      "description": "API base URL for the AI service.",
+      "defaultValue": "https://api.openai.com"
+    },
+    {
+      "name": "diatom.api.endpoint",
+      "type": "java.lang.String",
+      "description": "API endpoint path override (e.g., /anthropic).",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.api.model",
+      "type": "java.lang.String",
+      "description": "AI model name (e.g., gpt-4, claude-3, deepseek-v4-flash).",
+      "defaultValue": "gpt-4"
+    },
+    {
+      "name": "diatom.api.format",
+      "type": "java.lang.String",
+      "description": "API format: auto (default), openai, anthropic, or responses.",
+      "defaultValue": "auto"
+    },
+    {
+      "name": "diatom.api.max-tokens",
+      "type": "java.lang.Integer",
+      "description": "Maximum tokens for AI model response.",
+      "defaultValue": 8192
+    },
+    {
+      "name": "diatom.agent.language",
+      "type": "java.lang.String",
+      "description": "Agent language: en (English) or zh (Chinese).",
+      "defaultValue": "zh"
+    },
+    {
+      "name": "diatom.app.workspace-dir",
+      "type": "java.lang.String",
+      "description": "Workspace directory for file operations.",
+      "defaultValue": "${user.dir}"
+    },
+    {
+      "name": "diatom.app.user-agent",
+      "type": "java.lang.String",
+      "description": "Custom User-Agent header for API requests (e.g., \"Diatom-CLI/1.0.0 (IntelliJ IDEA)\"). Defaults to \"Diatom-CLI/<version>\".",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.agent.max-steps",
+      "type": "java.lang.Integer",
+      "description": "Maximum steps for agent before returning control.",
+      "defaultValue": 10
+    },
+    {
+      "name": "diatom.command.sandbox-mode",
+      "type": "java.lang.String",
+      "description": "Command sandbox mode: whitelist or none.",
+      "defaultValue": "whitelist"
+    },
+    {
+      "name": "diatom.command.whitelist",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of allowed shell commands.",
+      "defaultValue": []
+    },
+    {
+      "name": "diatom.command.timeout",
+      "type": "java.lang.Integer",
+      "description": "Command execution timeout in seconds.",
+      "defaultValue": 60
+    },
+    {
+      "name": "diatom.core.upgrade-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable automatic core version check on startup.",
+      "defaultValue": true
+    },
+    {
+      "name": "diatom.core.upgrade-policy",
+      "type": "java.lang.String",
+      "description": "Core upgrade policy: prompt, auto, or disable.",
+      "defaultValue": "prompt"
+    },
+    {
+      "name": "diatom.gateway.url",
+      "type": "java.lang.String",
+      "description": "Gateway URL for the Worker to connect to (e.g., http://192.168.1.10:8080). Synced to System.getProperty('gateway.url').",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable HTTPS for the internal management HTTP server.",
+      "defaultValue": false
+    },
+    {
+      "name": "diatom.gateway.ssl-keystore-path",
+      "type": "java.lang.String",
+      "description": "Path to certificate/keystore file. Auto-detected: .crt/.pem → PEM, .jks → JKS, .p12/.pfx → PKCS12.",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-keystore-password",
+      "type": "java.lang.String",
+      "description": "Keystore password.",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-key-password",
+      "type": "java.lang.String",
+      "description": "Key password (defaults to keystore-password if not set).",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-keystore-password-file",
+      "type": "java.lang.String",
+      "description": "Path to file containing keystore password (more secure than inline password).",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-key-password-file",
+      "type": "java.lang.String",
+      "description": "Path to file containing key password (more secure than inline password).",
+      "defaultValue": ""
+    },
+    {
+      "name": "diatom.gateway.ssl-keystore-key",
+      "type": "java.lang.String",
+      "description": "Path to PEM private key file (.key). Required when ssl-keystore-path points to a .crt/.pem file.",
+      "defaultValue": ""
+    }
+  ]
+}

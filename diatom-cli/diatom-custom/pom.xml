@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.obhen233</groupId>
+        <artifactId>diatom-cli</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>diatom-custom</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Diatom Custom</name>
+    <description>Diatom CLI - Custom module</description>
+
+    <properties>
+        <core.version>1.0.0</core.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.obhen233</groupId>
+            <artifactId>diatom-core</artifactId>
+            <version>${core.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler (version managed in parent) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <!-- Code format check (configured in parent) -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Shade: create custom-shaded.jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-custom</id>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/custom-shaded.jar</outputFile>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.github.obhen233.App</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <includes>
+                                        <include>com/github/obhen233/**/*.class</include>
+                                        <include>skills/**</include>
+                                        <include>*.properties</include>
+                                        <include>*.xml</include>
+                                        <include>*.txt</include>
+                                        <include>META-INF/services/**</include>
+                                        <include>META-INF/maven/com.github.obhen233/diatom-custom/**</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>com/github/obhen233/bootstrap/**</exclude>
+                                        <exclude>com/github/obhen233/core/**</exclude>
+                                        <exclude>com/github/obhen233/spi/**</exclude>
+                                        <exclude>*.SF</exclude>
+                                        <exclude>*.DSA</exclude>
+                                        <exclude>*.RSA</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/BC*.DSA</exclude>
+                                        <exclude>META-INF/BC*.RSA</exclude>
+                                        <exclude>META-INF/BC*.SF</exclude>
+                                        <exclude>META-INF/signatures/**</exclude>
+                                        <exclude>META-INF/INDEX.LIST</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/maven/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Sources JAR (version managed in parent) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>package</phase>
+                        <goals><goal>jar</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <finalName>diatom-custom</finalName>
+                </configuration>
+            </plugin>
+
+            <!-- Copy custom-version.txt from resources -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-custom-version</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>copy-resources</goal></goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/custom</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/resources</directory>
+                                    <includes>
+                                        <include>custom-version.txt</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Unpack bootstrap from diatom-core + Copy dependencies to lib directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-bootstrap</id>
+                        <phase>prepare-package</phase>
+                        <goals><goal>unpack</goal></goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.github.obhen233</groupId>
+                                    <artifactId>diatom-core</artifactId>
+                                    <version>${core.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/bootstrap</outputDirectory>
+                                    <includes>com/github/obhen233/bootstrap/**</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals><goal>copy-dependencies</goal></goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <excludeTransitive>false</excludeTransitive>
+                            <excludeArtifactIds>diatom-core,diatom-custom</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Build self-update sources JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <!-- Build custom-sources.jar for self-update -->
+                    <execution>
+                        <id>build-selfupdate-sources</id>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <!-- Copy standalone pom.xml and substitute version -->
+                                <copy file="${project.basedir}/src/main/resources/selfupdate/pom.xml"
+                                      tofile="${project.build.directory}/selfupdate-sources/pom.xml"
+                                      overwrite="true">
+                                    <filterset>
+                                        <filter token="core.version" value="${core.version}"/>
+                                    </filterset>
+                                </copy>
+
+                                <!-- Copy custom module source files to src/main/java -->
+                                <copy todir="${project.build.directory}/selfupdate-sources/src/main/java"
+                                      overwrite="true">
+                                    <fileset dir="${project.basedir}/src/main/java"/>
+                                </copy>
+
+                                <!-- Build the custom-sources.jar -->
+                                <jar destfile="${project.build.directory}/custom-sources.jar"
+                                     basedir="${project.build.directory}/selfupdate-sources"/>
+                            </target>
+                        </configuration>
+                    </execution>
+
+                    <!-- Copy normal diatom-core JAR to lib/diatom-core-${core.version}.jar -->
+                    <execution>
+                        <id>copy-core-jar</id>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.basedir}/../diatom-core/target/diatom-core-${core.version}.jar"
+                                      tofile="${project.build.directory}/lib/diatom-core-${core.version}.jar"
+                                      overwrite="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+
+                    <!-- Copy core-version.txt from diatom-core -->
+                    <execution>
+                        <id>copy-core-version</id>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.basedir}/../diatom-core/target/core/version.txt"
+                                      tofile="${project.build.directory}/custom/core-version.txt"
+                                      overwrite="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Assemble diatom-cli.jar (full deployment package) via Assembly plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-cli-jar</id>
+                        <phase>package</phase>
+                        <goals><goal>single</goal></goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assembly/cli-jar.xml</descriptor>
+                            </descriptors>
+                            <finalName>diatom-cli</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.github.obhen233.bootstrap.Bootstrap</mainClass>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

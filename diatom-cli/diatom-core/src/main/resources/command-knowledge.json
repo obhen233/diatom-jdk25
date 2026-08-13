@@ -1,0 +1,666 @@
+{
+  "version": 1,
+  "description": "Built-in command knowledge base for diatom-cli",
+  "commands": [
+    {
+      "command": "git status",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git log",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git show",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git diff",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git branch",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git stash list",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git reflog",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git tag",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "git fetch",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "git pull",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "git push",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git commit",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git merge",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git rebase",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git checkout",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git reset",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git add",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "git restore",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git stash pop",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git stash drop",
+      "toolType": "git",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "git branch -d",
+      "toolType": "git",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "git branch -D",
+      "toolType": "git",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "mvn clean",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "mvn compile",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "mvn test",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "mvn package",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "mvn install",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "mvn deploy",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 3
+    },
+    {
+      "command": "mvn verify",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "mvn site",
+      "toolType": "maven",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "npm list",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm view",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm info",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm search",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm outdated",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm ping",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "npm install",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "npm uninstall",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "npm update",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "npm publish",
+      "toolType": "npm",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "npm audit",
+      "toolType": "npm",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker ps",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker images",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker logs",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker inspect",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker stats",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker network ls",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker volume ls",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "docker run",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker pull",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "docker push",
+      "toolType": "docker",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "docker build",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker rm",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker rmi",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker stop",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "docker kill",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker-compose up",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "docker-compose down",
+      "toolType": "docker",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "cat",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "head",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "tail",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "grep",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "find",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "ls",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "dir",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "pwd",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "wc",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "sort",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "uniq",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "curl",
+      "toolType": "curl",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "wget",
+      "toolType": "wget",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "java",
+      "toolType": "java",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "javac",
+      "toolType": "java",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "python",
+      "toolType": "python",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "python3",
+      "toolType": "python",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "go",
+      "toolType": "go",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "node",
+      "toolType": "node",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "rm",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "rm -rf",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "del",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "format",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "fdisk",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "dd",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "mkfs",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "shutdown",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "init",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "userdel",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "groupdel",
+      "toolType": "shell",
+      "permission": "DENY",
+      "riskLevel": 3
+    },
+    {
+      "command": "chmod",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "chown",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "cp",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "mv",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 2
+    },
+    {
+      "command": "mkdir",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "touch",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "echo",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "sed",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 1
+    },
+    {
+      "command": "awk",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "ps",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "top",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "df",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "du",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "free",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "uname",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "hostname",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "whoami",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "date",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "which",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "where",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "file",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    },
+    {
+      "command": "stat",
+      "toolType": "shell",
+      "permission": "ALLOW",
+      "riskLevel": 0
+    }
+  ]
+}

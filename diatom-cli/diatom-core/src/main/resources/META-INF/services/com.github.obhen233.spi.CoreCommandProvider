@@ -1,0 +1,16 @@
+# CoreCommandProvider implementations - fixed order for consistent help display
+# Order matches TerminalUI buildHelpText()
+
+com.github.obhen233.cli.provider.HelpCommandProvider
+com.github.obhen233.cli.provider.SkillsCommandProvider
+com.github.obhen233.cli.provider.ContextCommandProvider
+com.github.obhen233.cli.provider.AuthCommandProvider
+com.github.obhen233.cli.provider.HistoryCommandProvider
+com.github.obhen233.cli.provider.TasksCommandProvider
+com.github.obhen233.cli.provider.SnapshotCommandProvider
+com.github.obhen233.cli.provider.ConfigCommandProvider
+com.github.obhen233.cli.provider.RulesCommandProvider
+com.github.obhen233.cli.provider.LogCommandProvider
+com.github.obhen233.cli.provider.StreamingCommandProvider
+com.github.obhen233.cli.McpCommand
+com.github.obhen233.cli.provider.DeployCommandProvider

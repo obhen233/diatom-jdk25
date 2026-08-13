@@ -1,0 +1,92 @@
+# diatom-ide Deployment
+# 对齐 Dockerfile（eclipse-temurin:25-jre-alpine，非 root 用户 appuser）。
+# 探针使用 Actuator liveness/readiness（management.endpoint.health.probes.enabled=true），
+# /actuator/health/* 在 AuthFilter 中免 token 放行。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diatom-ide
+  namespace: default
+  labels:
+    app: diatom-ide
+spec:
+  # 单用户 IDE，默认 1 副本；如需横向扩展见 k8s/hpa.yaml（受会话模型限制，仅适度扩展）
+  replicas: 1
+  selector:
+    matchLabels:
+      app: diatom-ide
+  template:
+    metadata:
+      labels:
+        app: diatom-ide
+    spec:
+      # 镜像内已用 USER appuser 运行；此处再断言非 root，防止误用 root 基础镜像
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: diatom-ide
+          image: diatom-ide:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            # 工作区路径：镜像内默认是 Windows 路径 D:/temp，容器内必须覆盖为 Linux 路径。
+            # 代码中 workspace.path=${WORKSPACE_PATH:...}，因此这里用环境变量覆盖。
+            - name: WORKSPACE_PATH
+              value: /app/workspace
+            - name: JAVA_OPTS
+              value: "-Xms256m"
+            - name: IDE_DOCKER_ENABLED
+              value: "auto"
+            - name: IDE_DOCKER_USERNAME
+              value: "appuser"
+            # 生产建议用哈希密码（echo -n "$pw" | sha256sum | cut -d' ' -f1 | xxd -r -p | base64）
+            # 通过 Secret 注入；未创建 Secret 时 optional 不会导致 Pod 启动失败
+            - name: IDE_DOCKER_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: diatom-ide-secrets
+                  key: docker-password-hash
+                  optional: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: workspace
+              mountPath: /app/workspace
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: diatom-ide-workspace
+---
+# 可选：Docker 认证密码哈希 Secret（占位示例）
+# kubectl apply -f - <<'EOF'
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: diatom-ide-secrets
+# type: Opaque
+# stringData:
+#   docker-password-hash: "<base64-sha256-hash>"
+# EOF

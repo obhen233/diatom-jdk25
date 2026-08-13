@@ -1,0 +1,23 @@
+# diatom-ide Prometheus ServiceMonitor（prometheus-operator / kube-prometheus-stack）
+# 抓取 Actuator /actuator/prometheus 指标。
+# AuthFilter 已放行 /actuator/prometheus（无需 token），Prometheus 可直接抓取。
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: diatom-ide
+  namespace: default
+  labels:
+    app: diatom-ide
+    release: kube-prometheus-stack   # TODO: 与 Prometheus 的 serviceMonitorSelector 匹配
+spec:
+  selector:
+    matchLabels:
+      app: diatom-ide
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+      honorLabels: true

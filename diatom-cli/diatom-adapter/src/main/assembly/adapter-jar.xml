@@ -1,0 +1,50 @@
+<assembly>
+    <id>launcher</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <!-- All adapter classes at root (SPI + bootstrap + internal), so downstream
+             compilation and runtime can resolve com.github.obhen233.adapter.* directly.
+             The redundant lib/diatom-adapter-*.jar inside lib/ is harmless at runtime
+             since root classpath takes priority. -->
+        <fileSet>
+            <directory>${project.build.directory}/classes</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>com/github/obhen233/adapter/**</include>
+            </includes>
+        </fileSet>
+        <!-- Version file -->
+        <fileSet>
+            <directory>${project.build.directory}/adapter</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>version.txt</include>
+            </includes>
+        </fileSet>
+        <!-- Banner -->
+        <fileSet>
+            <directory>${project.build.directory}/classes</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>banner.txt</include>
+            </includes>
+        </fileSet>
+        <!-- Resources: logback.xml and SPI services (needed at JAR root, not inside lib/*.jar) -->
+        <fileSet>
+            <directory>${project.build.directory}/classes</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>logback.xml</include>
+                <include>META-INF/services/**</include>
+            </includes>
+        </fileSet>
+        <!-- Lib dependencies (copied by maven-dependency-plugin) -->
+        <fileSet>
+            <directory>${project.build.directory}/lib</directory>
+            <outputDirectory>/lib</outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

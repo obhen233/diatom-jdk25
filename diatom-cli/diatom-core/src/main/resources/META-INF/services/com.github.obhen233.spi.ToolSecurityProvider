@@ -1,0 +1,2 @@
+# Default ToolSecurityProvider - fallback for built-in tools
+com.github.obhen233.spi.impl.DefaultToolSecurityProvider

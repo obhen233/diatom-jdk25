@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diatom Gateway API 文档 / API Documentation</title>
+    <style>
+        :root {
+          --bg: #1a1a2e;
+          --card: #16213e;
+          --card-hover: #1c2a4a;
+          --border: #2a3a5a;
+          --text: #e0e0e0;
+          --text-dim: #8899aa;
+          --accent: #4fc3f7;
+          --accent2: #81c784;
+          --accent3: #ffb74d;
+          --accent4: #ef5350;
+          --method-get: #4fc3f7;
+          --method-post: #81c784;
+          --method-put: #ffb74d;
+          --method-delete: #ef5350;
+          --tag-bg: #263238;
+          --code-bg: #0d1117;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+          background: var(--bg); color: var(--text); line-height: 1.6;
+          display: flex; min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+          width: 280px; min-width: 280px; background: var(--card);
+          border-right: 1px solid var(--border); overflow-y: auto;
+          position: sticky; top: 0; height: 100vh;
+        }
+        .sidebar-header {
+          padding: 20px; border-bottom: 1px solid var(--border);
+        }
+        .sidebar-header h1 { font-size: 18px; color: var(--accent); }
+        .sidebar-header p { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+        .sidebar-nav { padding: 8px 0; }
+        .nav-section { margin: 4px 0; }
+        .nav-section-title {
+          padding: 8px 20px; font-size: 11px; font-weight: 600;
+          color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+        }
+        .nav-item {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 20px; cursor: pointer; font-size: 13px;
+          color: var(--text-dim); text-decoration: none; transition: all 0.2s;
+        }
+        .nav-item:hover { background: var(--card-hover); color: var(--text); }
+        .nav-item.active { background: var(--card-hover); color: var(--accent); }
+        .nav-method {
+          font-size: 10px; font-weight: 700; padding: 1px 6px;
+          border-radius: 3px; min-width: 40px; text-align: center;
+        }
+        .nav-method.get { background: rgba(79,195,247,0.15); color: var(--method-get); }
+        .nav-method.post { background: rgba(129,199,132,0.15); color: var(--method-post); }
+        .nav-method.put { background: rgba(255,183,77,0.15); color: var(--method-put); }
+        .nav-method.delete { background: rgba(239,83,80,0.15); color: var(--method-delete); }
+
+        /* Main */
+        .main {
+          flex: 1; max-width: calc(100vw - 280px); padding: 40px 48px;
+        }
+        .main h2 { font-size: 28px; margin-bottom: 8px; }
+        .main h3 { font-size: 20px; margin: 32px 0 12px; color: var(--accent); }
+        .main h4 { font-size: 16px; margin: 24px 0 8px; color: var(--text); }
+        .main p { color: var(--text-dim); margin-bottom: 12px; }
+        .main .desc { color: var(--text-dim); margin-bottom: 20px; }
+
+        /* Endpoint card */
+        .endpoint {
+          background: var(--card); border: 1px solid var(--border);
+          border-radius: 8px; margin: 16px 0; overflow: hidden;
+        }
+        .endpoint-header {
+          display: flex; align-items: center; gap: 12px;
+          padding: 14px 20px; cursor: pointer; user-select: none;
+          border-bottom: 1px solid transparent; transition: background 0.2s;
+        }
+        .endpoint-header:hover { background: var(--card-hover); }
+        .endpoint.open .endpoint-header { border-bottom-color: var(--border); }
+        .endpoint-method {
+          font-size: 12px; font-weight: 700; padding: 2px 8px;
+          border-radius: 4px; min-width: 50px; text-align: center;
+        }
+        .endpoint-method.get { background: rgba(79,195,247,0.15); color: var(--method-get); }
+        .endpoint-method.post { background: rgba(129,199,132,0.15); color: var(--method-post); }
+        .endpoint-method.put { background: rgba(255,183,77,0.15); color: var(--method-put); }
+        .endpoint-method.delete { background: rgba(239,83,80,0.15); color: var(--method-delete); }
+        .endpoint-path {
+          font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px;
+          flex: 1;
+        }
+        .endpoint-tag {
+          font-size: 10px; padding: 2px 8px; border-radius: 10px;
+          background: var(--tag-bg); color: var(--text-dim);
+        }
+        .endpoint-body { padding: 0 20px 20px; display: none; }
+        .endpoint.open .endpoint-body { display: block; }
+
+        /* Code blocks */
+        pre {
+          background: var(--code-bg); border: 1px solid var(--border);
+          border-radius: 6px; padding: 16px; overflow-x: auto;
+          font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+          font-size: 13px; line-height: 1.5; margin: 12px 0;
+          position: relative;
+        }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+        .pre-label {
+          position: absolute; top: 8px; right: 12px;
+          font-size: 10px; color: var(--text-dim); text-transform: uppercase;
+        }
+        .json-key { color: #c792ea; }
+        .json-string { color: #c3e88d; }
+        .json-number { color: #f78c6c; }
+        .json-boolean { color: #ff5370; }
+        .json-null { color: #546e7a; }
+
+        /* Tables */
+        table {
+          width: 100%; border-collapse: collapse; margin: 12px 0;
+          font-size: 13px;
+        }
+        th, td {
+          text-align: left; padding: 10px 14px;
+          border-bottom: 1px solid var(--border);
+        }
+        th {
+          background: var(--tag-bg); color: var(--text-dim);
+          font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        tr:hover td { background: var(--card-hover); }
+        td.name { font-family: monospace; color: var(--accent); white-space: nowrap; }
+        td.type { font-family: monospace; color: var(--accent2); font-size: 12px; }
+        td.required { color: var(--accent4); }
+        td.desc { color: var(--text-dim); }
+
+        /* Model definition */
+        .model {
+          background: var(--card); border: 1px solid var(--border);
+          border-radius: 8px; margin: 12px 0; overflow: hidden;
+        }
+        .model-header {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 12px 20px; cursor: pointer; user-select: none;
+        }
+        .model-header:hover { background: var(--card-hover); }
+        .model-name { font-family: monospace; font-size: 15px; color: var(--accent); }
+        .model-body { padding: 0 20px 16px; display: none; }
+        .model.open .model-body { display: block; }
+
+        /* Direction badge */
+        .direction {
+          display: inline-flex; align-items: center; gap: 6px;
+          font-size: 11px; padding: 2px 10px; border-radius: 10px;
+          margin-bottom: 8px;
+        }
+        .direction.worker-to-gw { background: rgba(79,195,247,0.12); color: var(--method-get); }
+        .direction.gw-to-worker { background: rgba(255,183,77,0.12); color: var(--accent3); }
+        .direction.user-to-gw { background: rgba(129,199,132,0.12); color: var(--accent2); }
+
+        /* Badge */
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .badge.opt { background: rgba(255,183,77,0.15); color: var(--accent3); }
+        .badge.req { background: rgba(239,83,80,0.15); color: var(--accent4); }
+
+        /* Expand/collapse arrow */
+        .arrow { transition: transform 0.2s; font-size: 10px; color: var(--text-dim); }
+        .open .arrow { transform: rotate(90deg); }
+
+        /* Search */
+        .search-box {
+          margin: 0 16px 12px; position: relative;
+        }
+        .search-box input {
+          width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+          border-radius: 6px; background: var(--bg); color: var(--text);
+          font-size: 13px; outline: none;
+        }
+        .search-box input:focus { border-color: var(--accent); }
+        .search-box input::placeholder { color: var(--text-dim); }
+
+        /* Section divider */
+        .section-divider {
+          border: none; border-top: 1px solid var(--border); margin: 40px 0;
+        }
+
+        /* Info boxes */
+        .info-box {
+          background: rgba(79,195,247,0.08); border: 1px solid rgba(79,195,247,0.2);
+          border-radius: 6px; padding: 12px 16px; margin: 12px 0;
+          font-size: 13px; color: var(--text-dim);
+        }
+        .info-box strong { color: var(--accent); }
+
+        /* SSE specific */
+        .sse-event {
+          display: inline-block; font-family: monospace; font-size: 12px;
+          padding: 1px 6px; border-radius: 3px; background: var(--tag-bg); color: var(--accent3);
+        }
+
+        /* Toggle all */
+        .toggle-all {
+          font-size: 12px; color: var(--accent); cursor: pointer;
+          float: right; margin-top: 4px;
+        }
+        .toggle-all:hover { text-decoration: underline; }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        @media (max-width: 768px) {
+          body { flex-direction: column; }
+          .sidebar { width: 100%; min-width: auto; height: auto; position: static; }
+          .main { max-width: 100%; padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h1>Diatom Gateway API</h1>
+        <p>Worker 对接协议 / Worker Integration Protocol · v1.0</p>
+    </div>
+    <div class="search-box">
+        <input type="text" id="search" placeholder="搜索接口 / Search endpoints..." oninput="filterEndpoints()">
+    </div>
+    <div class="sidebar-nav" id="sidebarNav">
+        <div class="nav-section">
+            <div class="nav-section-title">入⻔</div>
+            <div class="nav-section-title">入门 / Getting Started</div>
+            <a class="nav-item" href="#auth" onclick="scrollToId('auth')">鉴权 / Authentication</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">模型</div>
+            <a class="nav-item" href="#model-capabilities" onclick="scrollToId('model-capabilities')">
+                WorkerCapabilities
+            </a>
+            <a class="nav-item" href="#model-task" onclick="scrollToId('model-task')">Task</a>
+            <a class="nav-item" href="#model-taskresult" onclick="scrollToId('model-taskresult')">TaskResult</a>
+            <a class="nav-item" href="#model-workerevent" onclick="scrollToId('model-workerevent')">WorkerEvent</a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Worker → Gateway</div>
+            <div class="nav-section-title">Worker → Gateway / Worker to Gateway</div>
+            <a class="nav-item" href="#worker-register" onclick="scrollToId('worker-register')">
+                <span class="nav-method post">POST</span>注册
+            </a>
+            <a class="nav-item" href="#worker-heartbeat" onclick="scrollToId('worker-heartbeat')">
+                <span class="nav-method put">PUT</span>心跳
+            </a>
+            <a class="nav-item" href="#worker-checkpoint" onclick="scrollToId('worker-checkpoint')">
+                <span class="nav-method post">POST</span>断点上报表
+            </a>
+            <a class="nav-item" href="#worker-deregister" onclick="scrollToId('worker-deregister')">
+                <span class="nav-method delete">DELETE</span>注销
+            </a>
+            <a class="nav-item" href="#worker-config-sync" onclick="scrollToId('worker-config-sync')">
+                <span class="nav-method get">GET</span>Config同步
+            </a>
+            <a class="nav-item" href="#worker-workspace" onclick="scrollToId('worker-workspace')">
+                <span class="nav-method get">GET</span>工作区
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Gateway → Worker</div>
+            <div class="nav-section-title">Gateway → Worker / Gateway to Worker</div>
+            <a class="nav-item" href="#gw-task" onclick="scrollToId('gw-task')">
+                <span class="nav-method post">POST</span>分发任务
+            </a>
+            <a class="nav-item" href="#gw-events" onclick="scrollToId('gw-events')">
+                <span class="nav-method get">GET</span>拉取事件
+            </a>
+            <a class="nav-item" href="#gw-cancel" onclick="scrollToId('gw-cancel')">
+                <span class="nav-method post">POST</span>取消任务
+            </a>
+            <a class="nav-item" href="#gw-health" onclick="scrollToId('gw-health')">
+                <span class="nav-method get">GET</span>健康检查
+            </a>
+            <a class="nav-item" href="#gw-resume" onclick="scrollToId('gw-resume')">
+                <span class="nav-method post">POST</span>恢复任务
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Worker 代理</div>
+            <div class="nav-section-title">Worker 代理 / Worker Proxy</div>
+            <a class="nav-item" href="#worker-proxy-chat" onclick="scrollToId('worker-proxy-chat')">
+                <span class="nav-method post">POST</span>代理对话
+            </a>
+            <a class="nav-item" href="#worker-proxy-command" onclick="scrollToId('worker-proxy-command')">
+                <span class="nav-method post">POST</span>代理命令
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">用户 → Gateway</div>
+            <div class="nav-section-title">用户 → Gateway / User to Gateway</div>
+            <a class="nav-item" href="#user-chat" onclick="scrollToId('user-chat')">
+                <span class="nav-method post">POST</span>流式对话
+            </a>
+            <a class="nav-item" href="#user-chat-stream" onclick="scrollToId('user-chat-stream')">
+                <span class="nav-method post">POST</span>SSE流式对话
+            </a>
+            <a class="nav-item" href="#user-tasks" onclick="scrollToId('user-tasks')">
+                <span class="nav-method get">GET</span>任务列表
+            </a>
+            <a class="nav-item" href="#user-task" onclick="scrollToId('user-task')">
+                <span class="nav-method get">GET</span>查询任务
+            </a>
+            <a class="nav-item" href="#user-cancel" onclick="scrollToId('user-cancel')">
+                <span class="nav-method post">POST</span>取消任务
+            </a>
+            <a class="nav-item" href="#user-loglevel" onclick="scrollToId('user-loglevel')">
+                <span class="nav-method post">POST</span>日志级别
+            </a>
+            <a class="nav-item" href="#user-workers" onclick="scrollToId('user-workers')">
+                <span class="nav-method get">GET</span>Worker列表
+            </a>
+            <a class="nav-item" href="#user-health" onclick="scrollToId('user-health')">
+                <span class="nav-method get">GET</span>健康检查
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">文件服务</div>
+            <div class="nav-section-title">文件服务 / File Service</div>
+            <a class="nav-item" href="#file-list" onclick="scrollToId('file-list')">
+                <span class="nav-method post">POST</span>文件列表
+            </a>
+            <a class="nav-item" href="#file-batch" onclick="scrollToId('file-batch')">
+                <span class="nav-method post">POST</span>批量读取
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">项目同步</div>
+            <div class="nav-section-title">项目同步 / Project Sync</div>
+            <a class="nav-item" href="#project-push" onclick="scrollToId('project-push')">
+                <span class="nav-method post">POST</span>推送项目
+            </a>
+            <a class="nav-item" href="#sandbox-setup" onclick="scrollToId('sandbox-setup')">
+                <span class="nav-method post">POST</span>沙箱设置
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">分布式锁</div>
+            <div class="nav-section-title">分布式锁 / Distributed Lock</div>
+            <a class="nav-item" href="#lock-acquire" onclick="scrollToId('lock-acquire')">
+                <span class="nav-method post">POST</span>获取锁
+            </a>
+            <a class="nav-item" href="#lock-release" onclick="scrollToId('lock-release')">
+                <span class="nav-method post">POST</span>释放锁
+            </a>
+            <a class="nav-item" href="#lock-renew" onclick="scrollToId('lock-renew')">
+                <span class="nav-method post">POST</span>续期锁
+            </a>
+            <a class="nav-item" href="#lock-status" onclick="scrollToId('lock-status')">
+                <span class="nav-method get">GET</span>锁状态
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">审批</div>
+            <div class="nav-section-title">审批 / Approval</div>
+            <a class="nav-item" href="#confirm-request" onclick="scrollToId('confirm-request')">
+                <span class="nav-method post">POST</span>请求审批
+            </a>
+            <a class="nav-item" href="#confirm-resolve" onclick="scrollToId('confirm-resolve')">
+                <span class="nav-method post">POST</span>处理审批
+            </a>
+            <a class="nav-item" href="#confirm-pending" onclick="scrollToId('confirm-pending')">
+                <span class="nav-method get">GET</span>待审批列表
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">部署与协作</div>
+            <div class="nav-section-title">部署与协作 / Deploy &amp; Collab</div>
+            <a class="nav-item" href="#deploy" onclick="scrollToId('deploy')">
+                <span class="nav-method post">POST</span>部署
+            </a>
+            <a class="nav-item" href="#collab" onclick="scrollToId('collab')">
+                <span class="nav-method post">POST</span>协同
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">状态</div>
+            <div class="nav-section-title">状态 / Status</div>
+            <a class="nav-item" href="#status-machine" onclick="scrollToId('status-machine')">
+                任务状态机
+                任务状态机 / State Machine
+            </a>
+            <a class="nav-item" href="#quickstart" onclick="scrollToId('quickstart')">
+                快速接入
+                快速接入 / Quick Start
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Monitor API</div>
+            <a class="nav-item" href="#monitor-rules" onclick="scrollToId('monitor-rules')">
+                <span class="nav-method get">GET</span>读取规则
+            </a>
+            <a class="nav-item" href="#monitor-rules-save" onclick="scrollToId('monitor-rules-save')">
+                <span class="nav-method post">POST</span>保存规则
+            </a>
+            <a class="nav-item" href="#worker-rules" onclick="scrollToId('worker-rules')">
+                <span class="nav-method get">GET</span>Worker 规则
+            </a>
+            <a class="nav-item" href="#monitor-status" onclick="scrollToId('monitor-status')">
+                <span class="nav-method get">GET</span>系统状态
+            </a>
+            <a class="nav-item" href="#monitor-config" onclick="scrollToId('monitor-config')">
+                <span class="nav-method post">POST</span>配置管理
+            </a>
+            <a class="nav-item" href="#monitor-i18n" onclick="scrollToId('monitor-i18n')">
+                <span class="nav-method get">GET</span>国际化
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+    <h2>Diatom Gateway — API 文档 / API Documentation</h2>
+    <p class="desc">
+        Gateway 与 Worker 之间通过 HTTP 通信，Worker 可用任何语言实现。
+        Communication between Gateway and Worker is via HTTP. Workers can be implemented in any language.
+        Worker 只需实现 <strong>2 个必需接口</strong>即可接入。
+        A Worker only needs <strong>2 required endpoints</strong> to connect.
+    </p>
+
+    <!-- ============================================ -->
+    <!-- Authentication -->
+    <!-- ============================================ -->
+    <h3 id="auth">鉴权 / Authentication</h3>
+    <p>Gateway 与 Worker 之间的 HTTP 通信使用共享 Token 鉴权。所有 <code>POST</code>/<code>PUT</code>/<code>DELETE</code> 请求均需携带以下安全头。
+        Communication between Gateway and Worker uses shared-token authentication. All <code>POST</code>/<code>PUT</code>/<code>DELETE</code> requests MUST carry the following security headers.</p>
+
+    <table>
+        <tr><th>Header</th><th>必需</th><th>说明</th></tr>
+        <tr><th>Header</th><th>Required</th><th>Description</th></tr>
+        <tr>
+            <td><code>X-Diatom-Auth</code></td>
+            <td><span class="required">必需</span></td>
+            <td>共享 Token。Gateway 与 Worker 配置相同的 <code>diatom.auth.token</code>。未配置时启动会自动生成随机 Token 并打印到控制台。</td>
+            <td><span class="required">必需 / Required</span></td>
+            <td>共享 Token。Gateway 与 Worker 配置相同的 <code>diatom.auth.token</code>。未配置时启动会自动生成随机 Token 并打印到控制台。Shared token between Gateway and Worker. Auto-generated if <code>diatom.auth.token</code> is not configured.</td>
+        </tr>
+        <tr>
+            <td><code>X-Diatom-Instance-Id</code></td>
+            <td><span class="required">必需</span></td>
+            <td>发送方实例 ID。用于标识请求来源，便于日志追踪和调试。</td>
+            <td><span class="required">必需 / Required</span></td>
+            <td>发送方实例 ID。用于标识请求来源，便于日志追踪和调试。Sender instance ID for request tracing and debugging.</td>
+        </tr>
+        <tr>
+            <td><code>X-Diatom-Encryption</code></td>
+            <td><span class="badge opt">可选</span></td>
+            <td>Body 加密算法标识，如 <code>AES-256</code>。配置 <code>diatom.encryption.key</code> 后启用。未启用时值为 <code>none</code>。</td>
+            <td><span class="badge opt">可选 / Optional</span></td>
+            <td>Body 加密算法标识，如 <code>AES-256</code>。配置 <code>diatom.encryption.key</code> 后启用。未启用时值为 <code>none</code>。Body encryption algorithm identifier. Enabled when <code>diatom.encryption.key</code> is configured.</td>
+        </tr>
+        <tr>
+            <td><code>X-Diatom-Timestamp</code></td>
+            <td><span class="badge opt">可选</span></td>
+            <td>请求时间戳（毫秒），用于防重放。</td>
+            <td><span class="badge opt">可选 / Optional</span></td>
+            <td>请求时间戳（毫秒），用于防重放。Request timestamp (milliseconds) for anti-replay protection.</td>
+        </tr>
+    </table>
+
+    <p><strong>健康检查</strong> (<code>GET /worker/v1/health</code>, <code>GET /gateway/v1/health</code>) <strong>免鉴权</strong>。
+        Health check endpoints are exempt from authentication.</p>
+
+    <!-- ============================================ -->
+    <!-- Models -->
+    <!-- ============================================ -->
+    <h3 id="models">数据模型</h3>
+    <p>所有接口的请求体和响应体均为 JSON 格式。</p>
+    <h3 id="models">数据模型 / Data Models</h3>
+    <p>所有接口的请求体和响应体均为 JSON 格式。All request and response bodies are in JSON format.</p>
+
+    <!-- WorkerCapabilities -->
+    <div class="model open" id="model-capabilities">
+        <div class="model-header" onclick="toggleModel(this.parentElement)">
+            <span class="model-name">WorkerCapabilities</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="model-body">
+            <p>Worker 注册时声明自身能力，Gateway 据此进行任务路由。</p>
+            <p>Worker 注册时声明自身能力，Gateway 据此进行任务路由。Declares Worker capabilities at registration. Gateway uses this for task routing.</p>
+            <table>
+                <tr><th>字段</th><th>类型</th><th>必需</th><th>说明</th></tr>
+                <tr><td class="name">languages</td><td class="type">string[]</td><td class="required">是</td><td class="desc">支持的语言, e.g. ["javascript","python","java"]</td></tr>
+                <tr><td class="name">frameworks</td><td class="type">string[]</td><td>否</td><td class="desc">支持的框架, e.g. ["react","spring","vue"]</td></tr>
+                <tr><td class="name">maxContextTokens</td><td class="type">number</td><td>否</td><td class="desc">上下文窗口大小, e.g. 200000</td></tr>
+                <tr><td class="name">supportsStreaming</td><td class="type">boolean</td><td>否</td><td class="desc">是否支持流式输出</td></tr>
+                <tr><td class="name">supportsMultiFile</td><td class="type">boolean</td><td>否</td><td class="desc">是否支持多文件修改</td></tr>
+                <tr><td class="name">costTier</td><td class="type">string</td><td>否</td><td class="desc">cheap / medium / expensive</td></tr>
+                <tr><td class="name">models</td><td class="type">string[]</td><td>否</td><td class="desc">可用模型列表</td></tr>
+                <tr><td class="name">features</td><td class="type">string[]</td><td>否</td><td class="desc">支持的特性, e.g. ["thinking","tool_use","file_edit"]</td></tr>
+                <tr><th>字段 / Field</th><th>类型 / Type</th><th>必需 / Required</th><th>说明 / Description</th></tr>
+                <tr><td class="name">languages</td><td class="type">string[]</td><td class="required">是 / Yes</td><td class="desc">支持的语言, e.g. ["javascript","python","java"]. Supported languages.</td></tr>
+                <tr><td class="name">frameworks</td><td class="type">string[]</td><td>否 / No</td><td class="desc">支持的框架, e.g. ["react","spring","vue"]. Supported frameworks.</td></tr>
+                <tr><td class="name">maxContextTokens</td><td class="type">number</td><td>否 / No</td><td class="desc">上下文窗口大小, e.g. 200000. Context window size.</td></tr>
+                <tr><td class="name">supportsStreaming</td><td class="type">boolean</td><td>否 / No</td><td class="desc">是否支持流式输出. Whether streaming output is supported.</td></tr>
+                <tr><td class="name">supportsMultiFile</td><td class="type">boolean</td><td>否 / No</td><td class="desc">是否支持多文件修改. Whether multi-file editing is supported.</td></tr>
+                <tr><td class="name">costTier</td><td class="type">string</td><td>否 / No</td><td class="desc">cheap / medium / expensive</td></tr>
+                <tr><td class="name">models</td><td class="type">string[]</td><td>否 / No</td><td class="desc">可用模型列表. Available model list.</td></tr>
+                <tr><td class="name">features</td><td class="type">string[]</td><td>否 / No</td><td class="desc">支持的特性, e.g. ["thinking","tool_use","file_edit"]. Supported features.</td></tr>
+            </table>
+            <pre>{
+  <span class="json-key">"languages"</span>: [<span class="json-string">"javascript"</span>, <span class="json-string">"python"</span>, <span class="json-string">"java"</span>],
+  <span class="json-key">"maxContextTokens"</span>: <span class="json-number">200000</span>,
+  <span class="json-key">"supportsStreaming"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"costTier"</span>: <span class="json-string">"medium"</span>,
+  <span class="json-key">"models"</span>: [<span class="json-string">"claude-sonnet-4-6"</span>]</span>
+                }</pre>
+        </div>
+    </div>
+
+    <!-- Task -->
+    <div class="model open" id="model-task">
+        <div class="model-header" onclick="toggleModel(this.parentElement)">
+            <span class="model-name">Task</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="model-body">
+            <p>Gateway 分发任务时发给 Worker 的完整任务描述。</p>
+            <p>Gateway 分发任务时发给 Worker 的完整任务描述。Complete task description sent from Gateway to Worker when dispatching.</p>
+            <table>
+                <tr><th>字段</th><th>类型</th><th>必需</th><th>说明</th></tr>
+                <tr><td class="name">taskId</td><td class="type">string</td><td class="required">是</td><td class="desc">全局唯一任务 ID</td></tr>
+                <tr><td class="name">type</td><td class="type">string</td><td>否</td><td class="desc">任务类型: coding / chat / review / debug</td></tr>
+                <tr><td class="name">instruction</td><td class="type">string</td><td class="required">是</td><td class="desc">自然语言指令, e.g. "给 UserController 添加分页接口"</td></tr>
+                <tr><td class="name">project.repoUrl</td><td class="type">string</td><td>否</td><td class="desc">Git 仓库地址</td></tr>
+                <tr><td class="name">project.branch</td><td class="type">string</td><td>否</td><td class="desc">分支名</td></tr>
+                <tr><td class="name">project.workDir</td><td class="type">string</td><td>否</td><td class="desc">工作目录路径</td></tr>
+                <tr><td class="name">context.files</td><td class="type">object[]</td><td>否</td><td class="desc">相关文件列表, 每项含 path/content/hash</td></tr>
+                <tr><td class="name">context.constraints</td><td class="type">string[]</td><td>否</td><td class="desc">约束条件, e.g. ["使用 Spring Data JPA"]</td></tr>
+                <tr><td class="name">timeoutSeconds</td><td class="type">number</td><td>否</td><td class="desc">超时时间(秒), 默认 300</td></tr>
+                <tr><th>字段 / Field</th><th>类型 / Type</th><th>必需 / Required</th><th>说明 / Description</th></tr>
+                <tr><td class="name">taskId</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">全局唯一任务 ID. Globally unique task ID.</td></tr>
+                <tr><td class="name">type</td><td class="type">string</td><td>否 / No</td><td class="desc">任务类型: coding / chat / review / debug. Task type.</td></tr>
+                <tr><td class="name">instruction</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">自然语言指令, e.g. "给 UserController 添加分页接口". Natural language instruction.</td></tr>
+                <tr><td class="name">project.repoUrl</td><td class="type">string</td><td>否 / No</td><td class="desc">Git 仓库地址. Git repository URL.</td></tr>
+                <tr><td class="name">project.branch</td><td class="type">string</td><td>否 / No</td><td class="desc">分支名. Branch name.</td></tr>
+                <tr><td class="name">project.workDir</td><td class="type">string</td><td>否 / No</td><td class="desc">工作目录路径. Working directory path.</td></tr>
+                <tr><td class="name">context.files</td><td class="type">object[]</td><td>否 / No</td><td class="desc">相关文件列表, 每项含 path/content/hash. Related files, each with path/content/hash.</td></tr>
+                <tr><td class="name">context.constraints</td><td class="type">string[]</td><td>否 / No</td><td class="desc">约束条件, e.g. ["使用 Spring Data JPA"]. Constraints.</td></tr>
+                <tr><td class="name">timeoutSeconds</td><td class="type">number</td><td>否 / No</td><td class="desc">超时时间(秒), 默认 300. Timeout in seconds, default 300.</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- TaskResult -->
+    <div class="model open" id="model-taskresult">
+        <div class="model-header" onclick="toggleModel(this.parentElement)">
+            <span class="model-name">TaskResult</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="model-body">
+            <p>Worker 执行完成后回调 Gateway 上报的结果。</p>
+            <p>Worker 执行完成后回调 Gateway 上报的结果。Result reported by Worker to Gateway after task execution completes.</p>
+            <table>
+                <tr><th>字段</th><th>类型</th><th>必需</th><th>说明</th></tr>
+                <tr><td class="name">taskId</td><td class="type">string</td><td class="required">是</td><td class="desc">对应任务的 ID</td></tr>
+                <tr><td class="name">status</td><td class="type">string</td><td class="required">是</td><td class="desc">success / failure / partial / cancelled</td></tr>
+                <tr><td class="name">summary</td><td class="type">string</td><td>否</td><td class="desc">执行摘要</td></tr>
+                <tr><td class="name">changes</td><td class="type">object[]</td><td>否</td><td class="desc">文件变更列表, 每项含 file/diff/action(oldHash/newHash)</td></tr>
+                <tr><td class="name">changes[].file</td><td class="type">string</td><td class="required">是</td><td class="desc">文件路径</td></tr>
+                <tr><td class="name">changes[].diff</td><td class="type">string</td><td class="required">是</td><td class="desc">Git unified diff 格式</td></tr>
+                <tr><td class="name">changes[].action</td><td class="type">string</td><td>否</td><td class="desc">modified / created / deleted</td></tr>
+                <tr><td class="name">rawLog</td><td class="type">string</td><td>否</td><td class="desc">Agent 原始输出日志</td></tr>
+                <tr><td class="name">elapsedSeconds</td><td class="type">number</td><td>否</td><td class="desc">执行耗时(秒)</td></tr>
+                <tr><td class="name">tokenUsage</td><td class="type">object</td><td>否</td><td class="desc">Token 消耗: {input, output, total}</td></tr>
+                <tr><th>字段 / Field</th><th>类型 / Type</th><th>必需 / Required</th><th>说明 / Description</th></tr>
+                <tr><td class="name">taskId</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">对应任务的 ID. Corresponding task ID.</td></tr>
+                <tr><td class="name">status</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">success / failure / partial / cancelled</td></tr>
+                <tr><td class="name">summary</td><td class="type">string</td><td>否 / No</td><td class="desc">执行摘要. Execution summary.</td></tr>
+                <tr><td class="name">changes</td><td class="type">object[]</td><td>否 / No</td><td class="desc">文件变更列表, 每项含 file/diff/action(oldHash/newHash). File change list.</td></tr>
+                <tr><td class="name">changes[].file</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">文件路径. File path.</td></tr>
+                <tr><td class="name">changes[].diff</td><td class="type">string</td><td class="required">是 / Yes</td><td class="desc">Git unified diff 格式. Git unified diff format.</td></tr>
+                <tr><td class="name">changes[].action</td><td class="type">string</td><td>否 / No</td><td class="desc">modified / created / deleted</td></tr>
+                <tr><td class="name">rawLog</td><td class="type">string</td><td>否 / No</td><td class="desc">Agent 原始输出日志. Agent raw output log.</td></tr>
+                <tr><td class="name">elapsedSeconds</td><td class="type">number</td><td>否 / No</td><td class="desc">执行耗时(秒). Execution time (seconds).</td></tr>
+                <tr><td class="name">tokenUsage</td><td class="type">object</td><td>否 / No</td><td class="desc">Token 消耗: {input, output, total}. Token usage.</td></tr>
+            </table>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"success"</span>,
+  <span class="json-key">"summary"</span>: <span class="json-string">"添加了分页查询接口"</span>,
+  <span class="json-key">"changes"</span>: [{
+    <span class="json-key">"file"</span>: <span class="json-string">"UserController.java"</span>,
+    <span class="json-key">"diff"</span>: <span class="json-string">"@@ -10,0 +10,28 @@ ..."</span>,
+    <span class="json-key">"action"</span>: <span class="json-string">"modified"</span>
+  }],
+  <span class="json-key">"elapsedSeconds"</span>: <span class="json-number">45</span>,
+  <span class="json-key">"tokenUsage"</span>: { <span class="json-key">"input"</span>: <span class="json-number">15000</span>, <span class="json-key">"output"</span>: <span class="json-number">3200</span> }
+}</pre>
+        </div>
+    </div>
+
+    <!-- WorkerEvent -->
+    <div class="model open" id="model-workerevent">
+        <div class="model-header" onclick="toggleModel(this.parentElement)">
+            <span class="model-name">WorkerEvent</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="model-body">
+            <p>流式事件，用于实时推送任务进度。支持通过 <strong>SSE</strong> 或 <strong>HTTP POST</strong> 传输。</p>
+            <p>流式事件，用于实时推送任务进度。支持通过 <strong>SSE</strong> 或 <strong>HTTP POST</strong> 传输。Streaming events for real-time task progress updates. Transmitted via <strong>SSE</strong> or <strong>HTTP POST</strong>.</p>
+            <table>
+                <tr><th>事件类型</th><th>说明</th><th>data 字段</th></tr>
+                <tr><td class="name">thinking</td><td class="desc">Agent 正在思考</td><td class="desc"><code>message</code>: 思考内容</td></tr>
+                <tr><td class="name">progress</td><td class="desc">执行进度</td><td class="desc"><code>phase</code>: analyzing/writing/testing, <code>progress</code>: 0~1</td></tr>
+                <tr><td class="name">tool_call</td><td class="desc">工具调用</td><td class="desc"><code>tool</code>: 工具名, <code>args</code>: 参数</td></tr>
+                <tr><td class="name">diff</td><td class="desc">文件变更</td><td class="desc"><code>file</code>: 路径, <code>diff</code>: unified diff</td></tr>
+                <tr><td class="name">error</td><td class="desc">错误信息</td><td class="desc"><code>code</code>: 错误码, <code>message</code>: 描述</td></tr>
+                <tr><td class="name">complete</td><td class="desc">任务完成</td><td class="desc"><code>status</code>: success/failure/partial, <code>summary</code>: 摘要</td></tr>
+                <tr><th>事件类型 / Event Type</th><th>说明 / Description</th><th>data 字段 / Data Fields</th></tr>
+                <tr><td class="name">thinking</td><td class="desc">Agent 正在思考 / Agent is thinking</td><td class="desc"><code>message</code>: 思考内容 / thought content</td></tr>
+                <tr><td class="name">progress</td><td class="desc">执行进度 / Execution progress</td><td class="desc"><code>phase</code>: analyzing/writing/testing, <code>progress</code>: 0~1</td></tr>
+                <tr><td class="name">tool_call</td><td class="desc">工具调用 / Tool call</td><td class="desc"><code>tool</code>: 工具名 / tool name, <code>args</code>: 参数 / arguments</td></tr>
+                <tr><td class="name">diff</td><td class="desc">文件变更 / File change</td><td class="desc"><code>file</code>: 路径 / path, <code>diff</code>: unified diff</td></tr>
+                <tr><td class="name">error</td><td class="desc">错误信息 / Error info</td><td class="desc"><code>code</code>: 错误码 / error code, <code>message</code>: 描述 / description</td></tr>
+                <tr><td class="name">complete</td><td class="desc">任务完成 / Task complete</td><td class="desc"><code>status</code>: success/failure/partial, <code>summary</code>: 摘要 / summary</td></tr>
+            </table>
+            <pre>{
+  <span class="json-key">"event"</span>: <span class="json-string">"thinking"</span>,
+  <span class="json-key">"data"</span>: {
+    <span class="json-key">"message"</span>: <span class="json-string">"正在分析 UserController.java..."</span>,
+    <span class="json-key">"timestamp"</span>: <span class="json-string">"2026-07-13T09:30:00Z"</span>
+  }
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- Worker → Gateway -->
+    <!-- ============================================ -->
+    <h3>Worker → Gateway 接口 / Worker to Gateway</h3>
+    <p>Worker 主动向 Gateway 发起的请求。Worker 启动后应先注册，然后周期性心跳。Requests from Worker to Gateway: register first, then heartbeat periodically.</p>
+
+    <!-- Register -->
+    <div class="endpoint open" id="worker-register">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/workers</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 启动时向 Gateway 注册自身信息。Gateway 将 Worker 加入注册表并可路由任务。Register a worker to the Gateway, enabling task routing.</p>
+            <table>
+                <tr><th>头部</th><th>值</th></tr>
+                <tr><th>头部 / Header</th><th>值 / Value</th></tr>
+                <tr><td>Content-Type</td><td>application/json</td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="badge opt">可选</span></td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="badge opt">可选 / Optional</span></td></tr>
+            </table>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"workerId"</span>: <span class="json-string">"worker01"</span>,
+  <span class="json-key">"host"</span>: <span class="json-string">"127.0.0.1"</span>,
+  <span class="json-key">"port"</span>: <span class="json-number">7001</span>,
+  <span class="json-key">"model"</span>: <span class="json-string">"claude-sonnet-4-6"</span>,
+  <span class="json-key">"workspace"</span>: <span class="json-string">"D:/projects/my-project"</span>,
+  <span class="json-key">"tier"</span>: <span class="json-string">"default"</span>,
+  <span class="json-key">"group"</span>: <span class="json-string">"my-group"</span>,
+  <span class="json-key">"useSsl</span>: <span class="json-boolean">false</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"ONLINE"</span>,
+  <span class="json-key">"lastHeartbeat</span>: <span class="json-number">1700000000000</span>,
+  <span class="json-key">"currentLoad</span>: <span class="json-number">0.0</span>,
+  <span class="json-key">"pid</span>: <span class="json-number">12345</span>,
+  <span class="json-key">"registeredAt</span>: <span class="json-number">1700000000000</span>
+}</pre>
+            <p class="field-desc"><code>workspace</code>: Worker 的实际工作目录。默认与 Gateway 同步，可通过 <code>-Dworkspace.dir</code> 自定义。Real workspace directory. Syncs from Gateway by default; override with <code>-Dworkspace.dir</code>.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"registered"</span>,
+  <span class="json-key">"workerId"</span>: <span class="json-string">"worker01"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Heartbeat -->
+    <div class="endpoint open" id="worker-heartbeat">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method put">PUT</span>
+            <span class="endpoint-path">/gateway/v1/workers/{workerId}/heartbeat</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 周期性向 Gateway 发送心跳。Gateway 在心跳超时（60s 离线，30s 可疑）后将 Worker 标记为 <code>OFFLINE</code> 或 <code>SUSPECT</code>。Periodic heartbeat to maintain online status. Timeout: 60s → OFFLINE, 30s → SUSPECT.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"currentLoad"</span>: <span class="json-number">0.0</span>,
+  <span class="json-key">"activeTasks"</span>: <span class="json-number">0</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Deregister -->
+    <div class="endpoint open" id="worker-deregister">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method delete">DELETE</span>
+            <span class="endpoint-path">/gateway/v1/workers/{workerId}</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 关闭时从 Gateway 注销自身。Deregister a worker from the Gateway on shutdown.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"deregistered"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Checkpoint report -->
+    <div class="endpoint open" id="worker-checkpoint">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/checkpoint</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 在任务执行的每个阶段向 Gateway 上报 checkpoint，用于断点续传和任务迁移。Gateway 持久化到 <code>gateway_checkpoints</code> 表。Report task checkpoint after each execution phase for resume and migration support. Persisted in the <code>gateway_checkpoints</code> table.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task_xxx"</span>,
+  <span class="json-key">"stepCount"</span>: <span class="json-number">15</span>,
+  <span class="json-key">"agentState"</span>: <span class="json-string">"{...serialized agent state JSON...}"</span>,
+  <span class="json-key">"conversationHistory"</span>: <span class="json-string">"[...JSON array of ChatMessage...]"</span>,
+  <span class="json-key">"toolResults"</span>: <span class="json-string">"[...JSON array of tool result messages...]"</span>,
+  <span class="json-key">"llmSummary"</span>: <span class="json-string">"..."</span>,
+  <span class="json-key">"fileChangeSummary"</span>: <span class="json-string">"..."</span>,
+  <span class="json-key">"messageCount"</span>: <span class="json-number">42</span>,
+  <span class="json-key">"tokenUsage"</span>: <span class="json-number">5000</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"taskStatus"</span>: <span class="json-string">"CANCELLING"</span>,
+  <span class="json-key">"message"</span>: <span class="json-string">"用户请求取消，请停止执行"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Config Sync -->
+    <div class="endpoint open" id="worker-config-sync">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/config/sync</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 从 Gateway 拉取同步配置。Sync configuration from Gateway.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"configs"</span>: [
+    { <span class="json-key">"key"</span>: <span class="json-string">"monitor.enabled"</span>, <span class="json-key">"value"</span>: <span class="json-string">"true"</span> }
+  ]
+}</pre>
+        </div>
+    </div>
+
+    <!-- Workspace -->
+    <div class="endpoint open" id="worker-workspace">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/workspace</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 获取 Gateway 的工作目录，确保操作同一项目空间。Discover the Gateway's workspace directory for shared project access.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"workspaceDir"</span>: <span class="json-string">"D:/diatom/workspace/gateway"</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- Gateway → Worker -->
+    <!-- ============================================ -->
+    <h3>Gateway → Worker 接口 / Gateway to Worker <span class="badge req">Worker 必需实现 / Required</span></h3>
+    <p>这些接口由 Worker 端实现 HTTP 端点，Gateway 作为客户端调用。<br>
+        These endpoints are implemented by the Worker. Gateway calls them as an HTTP client.<br>
+        <strong>必需实现 / Required:</strong> <span class="sse-event">POST /api/v1/task</span> 和 <span class="sse-event">GET /api/v1/health</span>，其余可选 / others optional.</p>
+
+    <!-- Dispatch task -->
+    <div class="endpoint open" id="gw-task">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/api/v1/task</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="badge req">必需</span>
+            <span class="badge req">必需 / Required</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Gateway 将任务分发给 Worker。支持两种响应模式。Gateway dispatches a task to the Worker. Two response modes:</p>
+            <ul style="margin:8px 0 16px 20px;color:var(--text-dim)">
+                <li><strong>同步模式</strong>（Response 200）：Worker 在 HTTP 响应中直接返回完整结果</li>
+                <li><strong>异步模式</strong>（Response 202）：Worker 先确认接收，完成后通过 callback 上报结果</li>
+                <li><strong>同步模式 / Sync</strong>（Response 200）：Worker 在 HTTP 响应中直接返回完整结果 / Worker returns the complete result directly in the HTTP response.</li>
+                <li><strong>异步模式 / Async</strong>（Response 202）：Worker 先确认接收，完成后通过 callback 上报结果 / Worker acknowledges receipt first, then reports results via callback.</li>
+            </ul>
+            <table>
+                <tr><th>头部</th><th>值</th></tr>
+                <tr><th>头部 / Header</th><th>值 / Value</th></tr>
+                <tr><td>Content-Type</td><td>application/json</td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需 / Required</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需 / Required</span></td></tr>
+            </table>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"coding"</span>,
+  <span class="json-key">"instruction"</span>: <span class="json-string">"给 UserController 添加分页查询接口"</span>,
+  <span class="json-key">"project"</span>: {
+    <span class="json-key">"workDir"</span>: <span class="json-string">"/workspace/task-123"</span>
+  },
+  <span class="json-key">"context"</span>: {
+    <span class="json-key">"files"</span>: [{ <span class="json-key">"path"</span>: <span class="json-string">"UserController.java"</span>, <span class="json-key">"content"</span>: <span class="json-string">"..."</span> }],
+    <span class="json-key">"constraints"</span>: [<span class="json-string">"使用 Spring Data JPA"</span>]
+  },
+  <span class="json-key">"timeoutSeconds"</span>: <span class="json-number">300</span>
+}</pre>
+            <h4>Response 200 (同步完成)</h4>
+            <pre>{
+  <span class="json-key">"ok"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"completed"</span>,
+  <span class="json-key">"result"</span>: { <span class="json-comment">/* TaskResult */</span> }
+}</pre>
+            <h4>Response 202 (异步接收)</h4>
+            <pre>{
+  <span class="json-key">"ok"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"accepted"</span>
+}</pre>
+            <h4>Response 429 (Worker 繁忙)</h4>
+            <pre>{
+  <span class="json-key">"ok"</span>: <span class="json-boolean">false</span>,
+  <span class="json-key">"error"</span>: <span class="json-string">"worker_busy"</span>,
+  <span class="json-key">"retryAfterSeconds"</span>: <span class="json-number">30</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- SSE Events -->
+    <div class="endpoint open" id="gw-events">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/api/v1/task/{taskId}/events</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="badge opt">可选</span>
+            <span class="badge opt">可选 / Optional</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Gateway 通过 SSE 协议拉取 Worker 的任务执行进度。Gateway pulls task progress via SSE (Server-Sent Events).</p>
+            <h4>Request</h4>
+            <pre>GET /api/v1/task/task-123/events
+Accept: text/event-stream</pre>
+            <h4>Response (SSE Stream)</h4>
+            <pre>event: thinking
+data: {"message":"正在分析代码结构..."}
+
+event: progress
+data: {"phase":"writing","progress":0.3}
+
+event: diff
+data: {"file":"UserController.java","diff":"@@ -10,0 +10,28 @@ ..."}
+
+event: complete
+data: {"status":"success","summary":"添加分页接口完成"}</pre>
+        </div>
+    </div>
+
+    <!-- Cancel -->
+    <div class="endpoint open" id="gw-cancel">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/api/v1/task/{taskId}/cancel</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="badge opt">可选</span>
+            <span class="badge opt">可选 / Optional</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Gateway 请求 Worker 取消正在执行的任务。Request the Worker to cancel a running task.</p>
+            <table>
+                <tr><th>头部</th><th>值</th></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需 / Required</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需 / Required</span></td></tr>
+            </table>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"ok"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"previousStatus"</span>: <span class="json-string">"running"</span>,
+  <span class="json-key">"newStatus"</span>: <span class="json-string">"cancelling"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Health -->
+    <div class="endpoint open" id="gw-health">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/api/v1/health</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="badge req">必需</span>
+            <span class="badge req">必需 / Required</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Gateway 对 Worker 进行健康检查。Worker 需返回当前状态和负载信息。</p>
+            <p>Gateway 对 Worker 进行健康检查。Worker 需返回当前状态和负载信息。Health check for Worker by Gateway. The Worker must return its status and load information.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"healthy"</span>,
+  <span class="json-key">"workerId"</span>: <span class="json-string">"claude-worker-1"</span>,
+  <span class="json-key">"uptimeSeconds"</span>: <span class="json-number">3600</span>,
+  <span class="json-key">"currentTaskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"queueDepth"</span>: <span class="json-number">0</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Resume task -->
+    <div class="endpoint open" id="gw-resume">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/worker/v1/resume</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>恢复一个 SUSPENDED 任务，从断点继续执行。Recover a SUSPENDED task from its last checkpoint.</p>
+            <table>
+                <tr><th>头部</th><th>值</th></tr>
+                <tr><th>头部 / Header</th><th>值 / Value</th></tr>
+                <tr><td>Content-Type</td><td>application/json</td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需</span></td></tr>
+                <tr><td>X-Diatom-Auth</td><td>&lt;auth-token&gt; <span class="required">必需 / Required</span></td></tr>
+                <tr><td>X-Diatom-Instance-Id</td><td>&lt;instance-id&gt; <span class="required">必需 / Required</span></td></tr>
+            </table>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task_xxx"</span>,
+  <span class="json-key">"checkpointStep"</span>: <span class="json-number">15</span>,
+  <span class="json-key">"originalRequest"</span>: <span class="json-string">"修改数据库schema"</span>,
+  <span class="json-key">"conversationHistory"</span>: [
+    <span class="json-string">"{...ChatMessage JSON...}"</span>
+  ],
+  <span class="json-key">"agentState"</span>: <span class="json-string">"{...agent state JSON...}"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task_xxx"</span>,
+  <span class="json-key">"response"</span>: <span class="json-string">"..."</span>
+}</pre>
+            <h4>Response 404</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"error"</span>,
+  <span class="json-key">"error"</span>: <span class="json-string">"No checkpoint found for task"</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- Worker Proxy -->
+    <!-- ============================================ -->
+    <h3>Worker 代理接口 / Worker Proxy</h3>
+    <p>使 Gateway 可以被上游 Gateway 当作 Worker 调用，实现多层 Gateway 架构。<br>
+        Allows an upstream Gateway to use this Gateway as a Worker for multi-layer Gateway architectures.</p>
+
+    <!-- Worker Proxy Chat -->
+    <div class="endpoint open" id="worker-proxy-chat">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/worker/v1/chat</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>上游 Gateway 将本 Gateway 当作 Worker 调用，通过本 Gateway 的路由系统分发到下游 Worker 或执行 Pipeline。<br>
+                Upstream Gateway calls this Gateway as a Worker. Routes to downstream Workers or executes pipeline.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-001"</span>,
+  <span class="json-key">"message"</span>: <span class="json-string">"Hello"</span>,
+  <span class="json-key">"sessionId</span>: <span class="json-string">"sess-001"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-001"</span>,
+  <span class="json-key">"response"</span>: <span class="json-string">"..."</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Worker Proxy Command -->
+    <div class="endpoint open" id="worker-proxy-command">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/worker/v1/command</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>上游 Gateway 对本 Gateway 执行管理命令（配置管理、规则管理等）。<br>
+                Execute management commands on this Gateway from an upstream Gateway (config/rules management).</p>
+            <p>支持的命令 / Supported commands: <code>rules list --json</code>, <code>config get</code>, <code>config set</code></p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"command"</span>: <span class="json-string">"rules list --json"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"output"</span>: <span class="json-string">"..."</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 用户 → Gateway -->
+    <!-- ============================================ -->
+    <h3>用户 → Gateway 接口 / User to Gateway</h3>
+    <p>面向终端用户和第三方集成的接口。RESTful APIs for end users and third-party integration.</p>
+
+    <!-- Task list -->
+    <div class="endpoint open" id="user-tasks">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/tasks</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>查看所有任务列表，可按状态过滤。List all tasks, optionally filtered by status.</p>
+            <h4>Query Parameters</h4>
+            <table>
+                <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+                <tr><td class="name">status</td><td>string</td><td class="desc">按状态过滤, e.g. PENDING, IN_PROGRESS, COMPLETED, FAILED</td></tr>
+                <tr><th>参数 / Parameter</th><th>类型 / Type</th><th>说明 / Description</th></tr>
+                <tr><td class="name">status</td><td>string</td><td class="desc">按状态过滤, e.g. PENDING, IN_PROGRESS, COMPLETED, FAILED. Filter by status.</td></tr>
+            </table>
+            <h4>Response 200</h4>
+            <pre>[
+  {
+    <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+    <span class="json-key">"status"</span>: <span class="json-string">"COMPLETED"</span>,
+    <span class="json-key">"workerId"</span>: <span class="json-string">"worker01"</span>,
+    <span class="json-key">"createdAt"</span>: <span class="json-number">1700000000000</span>
+  }
+]</pre>
+        </div>
+    </div>
+
+    <!-- Query task -->
+    <div class="endpoint open" id="user-query">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/tasks/{taskId}</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"completed"</span>,
+  <span class="json-key">"instruction"</span>: <span class="json-string">"给 UserController 添加分页接口"</span>,
+  <span class="json-key">"workerId"</span>: <span class="json-string">"claude-worker-1"</span>,
+  <span class="json-key">"result"</span>: { <span class="json-comment">/* TaskResult */</span> },
+  <span class="json-key">"createdAt"</span>: <span class="json-string">"2026-07-13T09:29:00Z"</span>,
+  <span class="json-key">"completedAt"</span>: <span class="json-string">"2026-07-13T09:30:00Z"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Cancel task -->
+    <div class="endpoint open" id="user-cancel">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/tasks/{taskId}/cancel</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>取消一个正在执行的任务。</p>
+            <p>取消一个正在执行的任务。Cancel a running task.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"cancelling"</span>
+}</pre>
+            <h4>Response 404</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"not_found"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Log Level -->
+    <div class="endpoint open" id="user-loglevel">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/tasks/{taskId}/loglevel</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>设置任务日志级别，用于调试。</p>
+            <p>设置任务日志级别，用于调试。Set task log level for debugging.</p>
+            <h4>Query Parameters</h4>
+            <table>
+                <tr><th>参数 / Parameter</th><th>类型 / Type</th><th>说明 / Description</th></tr>
+                <tr><td class="name">level</td><td>string</td><td class="desc">TRACE / DEBUG / INFO / WARN / ERROR</td></tr>
+            </table>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-001"</span>,
+  <span class="json-key">"logLevel"</span>: <span class="json-string">"DEBUG"</span>
+}</pre>
+            <h4>Response 404</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"not_found"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Chat SSE -->
+    <div class="endpoint open" id="user-chat">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/chat</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>对话接口，发送任务给 Gateway 进行处理。非流式返回。</p>
+            <p>对话接口，发送任务给 Gateway 进行处理。非流式返回。Chat endpoint. Sends a task to Gateway for processing. Non-streaming response.</p>
+            <h4>Request</h4>
+            <pre>POST /gateway/v1/chat
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  <span class="json-key">"messages"</span>: [
+    { <span class="json-key">"role"</span>: <span class="json-string">"user"</span>, <span class="json-key">"content"</span>: <span class="json-string">"添加分页接口"</span> }
+  ],
+  <span class="json-key">"stream"</span>: <span class="json-boolean">true</span>
+}</pre>
+            <h4>Response (SSE Stream)</h4>
+            <pre>event: worker_assigned
+data: {"workerId":"claude-worker-1","taskId":"task-123"}
+
+event: thinking
+data: {"message":"正在分析代码..."}
+
+event: diff
+data: {"file":"UserController.java","diff":"@@ -10 +10,28 @@..."}
+
+event: complete
+data: {"status":"success","summary":"添加分页接口完成"}</pre>
+        </div>
+    </div>
+
+    <!-- Chat Stream SSE -->
+    <div class="endpoint open" id="user-chat-stream">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/chat/stream</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="badge opt">仅 Daemon 模式</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>流式对话接口，通过 SSE 返回 Worker 的实时输出。</p>
+            <p>流式对话接口，通过 SSE 返回 Worker 的实时输出。Streaming chat endpoint. Returns real-time Worker output via SSE.</p>
+            <h4>Request</h4>
+            <pre>POST /gateway/v1/chat/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  <span class="json-key">"taskId"</span>: <span class="json-string">"task-123"</span>,
+  <span class="json-key">"message"</span>: <span class="json-string">"添加分页接口"</span>,
+  <span class="json-key">"sessionId"</span>: <span class="json-string">"sess-001"</span>
+}</pre>
+            <h4>Response (SSE Stream)</h4>
+            <pre>event: worker_assigned
+data: {"workerId":"worker01","taskId":"task-123"}
+
+event: thinking
+data: {"message":"正在分析代码..."}
+
+event: diff
+data: {"file":"UserController.java","diff":"@@ -10 +10,28 @@..."}
+
+event: complete
+data: {"status":"success","summary":"添加分页接口完成"}</pre>
+        </div>
+    </div>
+
+    <!-- List workers -->
+    <div class="endpoint open" id="user-workers">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/workers</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>查看当前注册的所有 Worker 及状态。List all registered workers.</p>
+            <h4>Query Parameters</h4>
+            <table>
+                <tr><th>参数</th><th>类型</th><th>说明</th></tr>
+                <tr><td class="name">language</td><td>string</td><td class="desc">按语言过滤, e.g. java</td></tr>
+                <tr><th>参数 / Parameter</th><th>类型 / Type</th><th>说明 / Description</th></tr>
+                <tr><td class="name">language</td><td>string</td><td class="desc">按语言过滤, e.g. java. Filter by language.</td></tr>
+                <tr><td class="name">status</td><td>string</td><td class="desc">online / busy / offline</td></tr>
+            </table>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"workers"</span>: [{
+    <span class="json-key">"workerId"</span>: <span class="json-string">"claude-worker-1"</span>,
+    <span class="json-key">"host"</span>: <span class="json-string">"127.0.0.1"</span>,
+    <span class="json-key">"port"</span>: <span class="json-number">7001</span>,
+    <span class="json-key">"model"</span>: <span class="json-string">"claude-sonnet-4-6"</span>,
+    <span class="json-key">"workspace"</span>: <span class="json-string">"D:/projects/my-project"</span>,
+    <span class="json-key">"status"</span>: <span class="json-string">"online"</span>,
+    <span class="json-key">"currentLoad"</span>: <span class="json-number">0.0</span>,
+    <span class="json-key">"lastHeartbeat"</span>: <span class="json-number">1700000000000</span>
+  }],
+  <span class="json-key">"total"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"online"</span>: <span class="json-number">1</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Health check -->
+    <div class="endpoint open" id="user-health">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/health</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Gateway 健康检查。Health check endpoint.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"UP"</span>,
+  <span class="json-key">"onlineWorkers"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"activeTasks"</span>: <span class="json-number">0</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 文件服务 / File Service -->
+    <!-- ============================================ -->
+    <h3>文件服务接口 / File Service</h3>
+    <p>提供 Gateway 工作区文件的查询和批量读取能力。<br>Query and batch-read files in the Gateway workspace.</p>
+
+    <!-- File List -->
+    <div class="endpoint open" id="file-list">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/file/list</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>列出 Gateway 工作区中的文件，支持 glob 模式过滤。<br>List files in the Gateway workspace, with optional glob pattern filtering.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"pattern"</span>: <span class="json-string">"src/**/*.java"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"files"</span>: [<span class="json-string">"src/main/App.java"</span>, <span class="json-string">"src/main/Util.java"</span>],
+  <span class="json-key">"total"</span>: <span class="json-number">2</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- File Batch -->
+    <div class="endpoint open" id="file-batch">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/file/batch</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>批量读取多个文件内容，以 Base64 编码返回。支持 gzip 压缩传输。<br>Batch-read multiple files, returned as Base64-encoded content. Supports gzip compression.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"files"</span>: [<span class="json-string">"pom.xml"</span>, <span class="json-string">"src/main/java/App.java"</span>],
+  <span class="json-key">"compress"</span>: <span class="json-boolean">false</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"files"</span>: {
+    <span class="json-string">"pom.xml"</span>: <span class="json-string">"<em>base64 content...</em>"</span>,
+    <span class="json-string">"src/main/java/App.java"</span>: <span class="json-string">"<em>base64 content...</em>"</span>
+  },
+  <span class="json-key">"found"</span>: <span class="json-number">2</span>,
+  <span class="json-key">"total"</span>: <span class="json-number">2</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 项目同步 / Project Sync -->
+    <!-- ============================================ -->
+    <h3>项目同步接口 / Project Sync</h3>
+    <p>在 Gateway 与 Worker 之间同步项目文件，确保工作区一致。<br>Sync project files between Gateway and Worker to ensure workspace consistency.</p>
+
+    <!-- Project Push -->
+    <div class="endpoint open" id="project-push">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/project/push</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>将 Gateway 工作区项目文件推送到远端 Worker 并应用差异。<br>Push Gateway workspace project files to a remote Worker and apply diffs.</p>
+            <p><strong>头信息 / Headers:</strong> <code>X-Task-Id</code>, <code>X-Worker-Id</code></p>
+            <h4>Request Body (fileDiffs 数组)</h4>
+            <pre>{
+  <span class="json-key">"fileDiffs"</span>: [{
+    <span class="json-key">"relativePath"</span>: <span class="json-string">"src/main/App.java"</span>,
+    <span class="json-key">"changeType"</span>: <span class="json-string">"MODIFIED"</span>,
+    <span class="json-key">"newContent"</span>: <span class="json-string">"..."</span>,
+    <span class="json-key">"oldContent"</span>: <span class="json-string">"..."</span>
+  }]
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Sandbox Setup -->
+    <div class="endpoint open" id="sandbox-setup">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/sandbox/setup</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>在远端 Worker 上设置沙箱工作区，推送项目文件并配置隔离环境。<br>Setup a sandbox workspace on a remote Worker with project files and isolated environment.</p>
+            <p><strong>头信息 / Headers:</strong> <code>X-Workspace-Path</code> (必需 / required)</p>
+            <h4>Response 200 (ZIP 二进制流 / binary stream)</h4>
+            <p>返回项目文件的 ZIP 压缩包，Worker 解压后部署到指定工作区路径。<br>Returns a ZIP archive of project files. Worker decompresses and deploys to the workspace path.</p>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 分布式锁 / Distributed Lock -->
+    <!-- ============================================ -->
+    <h3>分布式锁接口 / Distributed Lock</h3>
+    <p>提供分布式锁机制，防止多 Worker 并发修改同一资源。<br>Distributed locking to prevent concurrent modifications to the same resource by multiple Workers.</p>
+
+    <!-- Lock Acquire -->
+    <div class="endpoint open" id="lock-acquire">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/lock/acquire</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>获取分布式锁，支持 READ/WRITE 模式。<br>Acquire a distributed lock with READ or WRITE mode.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"resourceId"</span>: <span class="json-string">"file-001"</span>,
+  <span class="json-key">"workerId"</span>: <span class="json-string">"w1"</span>,
+  <span class="json-key">"mode</span>: <span class="json-string">"WRITE"</span>,
+  <span class="json-key">"leaseMs</span>: <span class="json-number">30000</span>,
+  <span class="json-key">"waitMs</span>: <span class="json-number">60000</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"token"</span>: <span class="json-string">"lock-token-xxx"</span>,
+  <span class="json-key">"expiresAt"</span>: <span class="json-number">1234567890</span>,
+  <span class="json-key">"mode</span>: <span class="json-string">"WRITE"</span>
+}</pre>
+            <h4>Response 409 (锁被占用)</h4>
+            <pre>{
+  <span class="json-key">"error"</span>: <span class="json-string">"lock_held"</span>,
+  <span class="json-key">"message"</span>: <span class="json-string">"Could not acquire lock"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Lock Release -->
+    <div class="endpoint open" id="lock-release">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/lock/release</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>释放已获取的分布式锁。<br>Release a previously acquired distributed lock.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"resourceId"</span>: <span class="json-string">"file-001"</span>,
+  <span class="json-key">"token"</span>: <span class="json-string">"lock-token-xxx"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"released"</span>: <span class="json-boolean">true</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Lock Renew -->
+    <div class="endpoint open" id="lock-renew">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/lock/renew</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>延长已获取分布式锁的 TTL。<br>Extend the TTL of an acquired distributed lock.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"resourceId"</span>: <span class="json-string">"file-001"</span>,
+  <span class="json-key">"token"</span>: <span class="json-string">"lock-token-xxx"</span>,
+  <span class="json-key">"additionalMs</span>: <span class="json-number">30000</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"renewed"</span>: <span class="json-boolean">true</span>,
+  <span class="json-key">"expiresAt"</span>: <span class="json-number">1234567890</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Lock Status -->
+    <div class="endpoint open" id="lock-status">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/lock/status</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>查看所有活跃的分布式锁状态。<br>Get status of all active distributed locks.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"locks"</span>: [{
+    <span class="json-key">"resourceId"</span>: <span class="json-string">"file-001"</span>,
+    <span class="json-key">"workerId"</span>: <span class="json-string">"w1"</span>,
+    <span class="json-key">"expiresAt"</span>: <span class="json-number">1234567890</span>
+  }],
+  <span class="json-key">"queues"</span>: {}
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 审批 / Approval -->
+    <!-- ============================================ -->
+    <h3>审批接口 / Approval</h3>
+    <p>Worker 在遇到危险操作时创建审批请求，用户通过 Monitor 面板或 API 审批。<br>
+        Worker creates confirmation requests for dangerous operations. Users approve via Monitor dashboard or API.</p>
+
+    <!-- Confirm Request -->
+    <div class="endpoint open" id="confirm-request">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/confirm-request</span>
+            <span class="direction worker-to-gw">Worker → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>Worker 上报需要用户确认的操作，创建审批请求。<br>Report a dangerous operation requiring user confirmation.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"toolName"</span>: <span class="json-string">"FileTools"</span>,
+  <span class="json-key">"args"</span>: { <span class="json-key">"path"</span>: <span class="json-string">"/etc/passwd"</span> },
+  <span class="json-key">"description"</span>: <span class="json-string">"Modify system file"</span>
+}</pre>
+            <h4>Response 202</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"queued"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Confirm Resolve -->
+    <div class="endpoint open" id="confirm-resolve">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/confirm-resolve</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>审批或拒绝一个待处理的审批请求。<br>Approve or reject a pending confirmation request.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"requestId"</span>: <span class="json-string">"cfm-001"</span>,
+  <span class="json-key">"decision"</span>: <span class="json-string">"y"</span>
+}</pre>
+            <p>Decision 取值 / Decision values: <code>y</code> (是/yes), <code>n</code> (否/no), <code>a</code> (全部批准/approve all), <code>s</code> (跳过/skip), <code>t</code> (信任/trust), <code>c</code> (取消/cancel)</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Confirm Pending -->
+    <div class="endpoint open" id="confirm-pending">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/gateway/v1/confirm-pending</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>获取所有待审批的请求列表。<br>Get all pending confirmation requests waiting for user approval.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"pending"</span>: [{
+    <span class="json-key">"requestId"</span>: <span class="json-string">"cfm-001"</span>,
+    <span class="json-key">"workerId"</span>: <span class="json-string">"w1"</span>,
+    <span class="json-key">"toolName"</span>: <span class="json-string">"FileTools"</span>,
+    <span class="json-key">"action"</span>: <span class="json-string">"modify"</span>,
+    <span class="json-key">"arguments"</span>: <span class="json-string">"..."</span>
+  }]
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 部署与协作 / Deploy & Collab -->
+    <!-- ============================================ -->
+    <h3>部署与协作接口 / Deploy &amp; Collab</h3>
+    <p>部署任务和多 Worker 协同执行。<br>Deployment tasks and multi-Worker collaboration.</p>
+
+    <!-- Deploy -->
+    <div class="endpoint open" id="deploy">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/deploy</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>提交部署任务。Gateway 通过 CapabilityRouter 路由到具有部署能力的 Worker 执行构建、SCP、SSH 等操作。<br>Submit a deployment task. Gateway routes to a Worker with deploy capability for build, SCP, SSH operations.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"profile"</span>: <span class="json-string">"production"</span>,
+  <span class="json-key">"workspaceHint"</span>: <span class="json-string">"/mnt/nas/project-x"</span>,
+  <span class="json-key">"projectName"</span>: <span class="json-string">"my-app"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"completed"</span>,
+  <span class="json-key">"worker"</span>: <span class="json-string">"w1"</span>,
+  <span class="json-key">"taskId"</span>: <span class="json-string">"deploy-my-app"</span>,
+  <span class="json-key">"workerResponse"</span>: { <span class="json-comment">/* Worker 返回结果 */</span> }
+}</pre>
+            <h4>Response 503 (无可用 Worker)</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"error"</span>,
+  <span class="json-key">"error"</span>: <span class="json-string">"No available workers with deploy capability"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Collab -->
+    <div class="endpoint open" id="collab">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/gateway/v1/collab</span>
+            <span class="direction user-to-gw">用户 → Gateway</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>提交协同任务。Gateway 将任务拆解后由多个 Worker 并行执行，合并结果返回。<br>Submit a collaborative task. Gateway decomposes the task, multiple Workers execute in parallel, results are merged.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"message"</span>: <span class="json-string">"Implement login page"</span>,
+  <span class="json-key">"taskType"</span>: <span class="json-string">"development"</span>,
+  <span class="json-key">"capabilities"</span>: [<span class="json-string">"frontend"</span>, <span class="json-string">"backend"</span>],
+  <span class="json-key">"sessionId"</span>: <span class="json-string">"sess-001"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"sessionId"</span>: <span class="json-string">"sess-001"</span>,
+  <span class="json-key">"result"</span>: <span class="json-string">"<em>merged result from all Workers...</em>"</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 任务状态机 -->
+    <!-- ============================================ -->
+    <h3 id="status-machine">任务状态机</h3>
+    <h3 id="status-machine">任务状态机 / Task State Machine</h3>
+    <pre>
+                  ┌──────────┐
+                  │  pending  │
+                  └────┬─────┘
+                       │ Router 分配到 Worker
+                       │ Router assigns to Worker
+                  ┌────▼─────┐
+                  │ assigned  │
+                  └────┬─────┘
+                       │ Worker 确认接收
+                       │ Worker acknowledges
+                  ┌────▼─────┐
+          ┌───────│ running   │────────┐
+          │       └────┬─────┘        │
+          │            │               │
+     ┌────▼────┐  ┌────▼────┐   ┌─────▼─────┐
+     │cancelling│  │completed│   │  failed    │
+     └────┬────┘  └─────────┘   └───────────┘
+          │
+     ┌────▼────┐
+     │cancelled │
+     └─────────┘
+  </pre>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- 快速接入 -->
+    <!-- ============================================ -->
+    <h3 id="quickstart">快速接入指南 / Quick Start</h3>
+    <p>实现一个 Worker 只需以下步骤。A Worker needs only these steps to connect.</p>
+
+    <h4>最小实现 / Minimum Requirements</h4>
+    <div class="info-box">
+        <strong>1. GET /api/v1/health</strong> — 返回 Worker 健康状态 / Worker health status<br>
+        <strong>2. POST /api/v1/task</strong> — 接收任务并执行 / Receive and execute tasks
+    </div>
+
+    <h4>启动流程 / Startup Flow</h4>
+    <pre>
+1. Worker 启动 HTTP Server（端口自定）/ Start HTTP server
+2. POST /gateway/v1/workers → 向 Gateway 注册 / Register to Gateway
+3. 定时 PUT /gateway/v1/workers/{id}/heartbeat → 心跳维持 / Heartbeat
+4. Gateway 调用 POST /api/v1/task → Worker 开始执行 / Execute task
+5. 执行完毕 → 同步返回结果 / Return result synchronously
+  </pre>
+
+    <h4>Bridge 一键接入 / Bridge Auto-Connect</h4>
+    <p>对于不支持 diatom 协议的 CLI 工具（claude, codex, opencode 等），使用 Bridge 工具自动包装。For CLI tools without native diatom protocol support.</p>
+    <pre>bridge --tool claude --gateway http://gateway:8080 --port 9001</pre>
+    <p>Bridge 会自动处理：HTTP 服务、注册、心跳、CLI 子进程管理、输出解析。Auto-handles HTTP server, registration, heartbeat, CLI management, output parsing.</p>
+
+    <h4>最小 Worker 示例 / Minimal Worker Example (Python)</h4>
+    <pre>from flask import Flask, request, jsonify
+import time
+
+app = Flask(__name__)
+
+@app.route('/api/v1/health')
+def health():
+    return jsonify({"status": "healthy", "workerId": "my-worker"})
+
+@app.route('/api/v1/task', methods=['POST'])
+def execute_task():
+    task = request.json
+    instruction = task['instruction']
+    # 调用你的 AI Agent 执行任务 / Execute with your AI Agent
+    result = run_my_agent(instruction)
+    # 同步返回结果 / Return synchronously
+    return jsonify({
+        "ok": True,
+        "taskId": task['taskId'],
+        "status": "completed",
+        "result": {
+            "taskId": task['taskId'],
+            "status": "success",
+            "summary": f"Done: {instruction}",
+            "changes": result.get('changes', [])
+        }
+    })
+
+if __name__ == '__main__':
+    app.run(port=9001)</pre>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- Monitor API -->
+    <!-- ============================================ -->
+    <h3>Monitor API — 规则管理 / Rules Management</h3>
+    <p>通过 Monitor 仪表板管理 Gateway 和 Worker 的规则文件（如 gateway-prompt.skill.md 和 capability.md）。<br>
+        Manage rule files (gateway-prompt.skill.md, capability.md) via the Monitor dashboard.</p>
+
+    <!-- GET Monitor Rules -->
+    <div class="endpoint open" id="monitor-rules">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/monitor/api/rules?target=gateway&type=prompt</span>
+            <span class="direction gw-to-worker">Gateway API</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>读取规则文件内容。支持 Gateway 和 Worker 两种目标。Read rule file contents for Gateway or Worker.</p>
+            <h4>Query Parameters</h4>
+            <table>
+                <tr><th>参数</th><th>必需</th><th>说明</th></tr>
+                <tr><td class="name">target</td><td class="required">是</td><td class="desc"><code>gateway</code> 或 <code>worker</code></td></tr>
+                <tr><td class="name">type</td><td class="required">是</td><td class="desc">规则类型：<code>prompt</code>（Gateway）或 <code>capability</code>（Worker）</td></tr>
+                <tr><td class="name">workerId</td><td>Worker 时必需</td><td class="desc">目标 Worker ID</td></tr>
+                <tr><th>参数 / Parameter</th><th>必需 / Required</th><th>说明 / Description</th></tr>
+                <tr><td class="name">target</td><td class="required">是 / Yes</td><td class="desc"><code>gateway</code> 或 <code>worker</code>. gateway or worker.</td></tr>
+                <tr><td class="name">type</td><td class="required">是 / Yes</td><td class="desc">规则类型：<code>prompt</code>（Gateway）或 <code>capability</code>（Worker）。Rule type: prompt or capability.</td></tr>
+                <tr><td class="name">workerId</td><td>Worker 时必需 / Required for Worker</td><td class="desc">目标 Worker ID. Target Worker ID.</td></tr>
+            </table>
+            <h4>Response 200 (Gateway Prompt)</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"target"</span>: <span class="json-string">"gateway"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"prompt"</span>,
+  <span class="json-key">"path"</span>: <span class="json-string">"~/.diatom/gateway-prompt.skill.md"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"You are a request analyzer...\n..."</span>
+}</pre>
+            <h4>Response 200 (Worker Capability)</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"capability"</span>,
+  <span class="json-key">"path"</span>: <span class="json-string">".../capability.md"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"worker capabilities: ...\n..."</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- POST Monitor Rules -->
+    <div class="endpoint open" id="monitor-rules-save">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/monitor/api/rules</span>
+            <span class="direction gw-to-worker">Gateway API</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>保存规则文件内容。Save rule file contents.</p>
+            <h4>Request Body (Gateway Prompt)</h4>
+            <pre>{
+  <span class="json-key">"target"</span>: <span class="json-string">"gateway"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"prompt"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"You are a request analyzer...\n..."</span>
+}</pre>
+            <h4>Request Body (Worker Capability)</h4>
+            <pre>{
+  <span class="json-key">"target"</span>: <span class="json-string">"worker"</span>,
+  <span class="json-key">"workerId"</span>: <span class="json-string">"worker01"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"capability"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"worker capabilities: ...\n..."</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"path"</span>: <span class="json-string">"~/.diatom/gateway-prompt.skill.md"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Worker Rules -->
+    <div class="endpoint open" id="worker-rules">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/worker/v1/rules?type=capability</span>
+            <span class="direction gw-to-worker">Gateway → Worker</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>读取 Worker 本地的规则文件。Read the Worker's local rules file.</p>
+            <table>
+                <tr><th>方法</th><th>路径</th><th>说明</th></tr>
+                <tr><td class="name">GET</td><td><code>/worker/v1/rules?type=capability</code></td><td class="desc">读取规则文件</td></tr>
+                <tr><td class="name">POST</td><td><code>/worker/v1/rules</code></td><td class="desc">保存规则文件，Body: <code>{"type":"capability","content":"..."}</code></td></tr>
+                <tr><th>方法 / Method</th><th>路径 / Path</th><th>说明 / Description</th></tr>
+                <tr><td class="name">GET</td><td><code>/worker/v1/rules?type=capability</code></td><td class="desc">读取规则文件. Read rules file.</td></tr>
+                <tr><td class="name">POST</td><td><code>/worker/v1/rules</code></td><td class="desc">保存规则文件，Body: <code>{"type":"capability","content":"..."}</code>. Save rules file.</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ============================================ -->
+    <!-- Monitor Status -->
+    <!-- ============================================ -->
+    <div class="endpoint open" id="monitor-status">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/monitor/api/status</span>
+            <span class="direction gw-to-worker">Gateway API</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>获取 Gateway 系统状态，包括 Worker 列表、任务列表、内存使用和负载历史。<br>Get Gateway system status: worker list, task list, memory usage, and load history.</p>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"onlineWorkers"</span>: <span class="json-number">2</span>,
+  <span class="json-key">"activeTasks"</span>: <span class="json-number">1</span>,
+  <span class="json-key">"pendingTasks"</span>: <span class="json-number">0</span>,
+  <span class="json-key">"totalTasks"</span>: <span class="json-number">10</span>,
+  <span class="json-key">"workers"</span>: [{ <span class="json-key">"workerId"</span>: <span class="json-string">"w1"</span>, <span class="json-key">"status"</span>: <span class="json-string">"ONLINE"</span> }],
+  <span class="json-key">"tasks"</span>: [{ <span class="json-key">"taskId"</span>: <span class="json-string">"task-001"</span>, <span class="json-key">"status"</span>: <span class="json-string">"IN_PROGRESS"</span> }],
+  <span class="json-key">"concurrency"</span>: { <span class="json-key">"max"</span>: <span class="json-number">10</span>, <span class="json-key">"available"</span>: <span class="json-number">9</span>, <span class="json-key">"queued"</span>: <span class="json-number">0</span> }
+}</pre>
+        </div>
+    </div>
+
+    <!-- Monitor Config -->
+    <div class="endpoint open" id="monitor-config">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method post">POST</span>
+            <span class="endpoint-path">/monitor/api/config</span>
+            <span class="direction gw-to-worker">Gateway API</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>读取或修改 Gateway/Worker 配置。命令格式：<code>config get|set|reset</code>。<br>Read or modify Gateway/Worker configuration. Commands: config get|set|reset.</p>
+            <h4>Request Body</h4>
+            <pre>{
+  <span class="json-key">"workerId"</span>: <span class="json-string">"__gateway__"</span>,
+  <span class="json-key">"command"</span>: <span class="json-string">"config get logLevel"</span>
+}</pre>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"status"</span>: <span class="json-string">"ok"</span>,
+  <span class="json-key">"output"</span>: <span class="json-string">"logLevel=DEBUG"</span>
+}</pre>
+        </div>
+    </div>
+
+    <!-- Monitor I18n -->
+    <div class="endpoint open" id="monitor-i18n">
+        <div class="endpoint-header" onclick="toggleEndpoint(this.parentElement)">
+            <span class="endpoint-method get">GET</span>
+            <span class="endpoint-path">/monitor/api/i18n</span>
+            <span class="direction gw-to-worker">Gateway API</span>
+            <span class="arrow">&#9654;</span>
+        </div>
+        <div class="endpoint-body">
+            <p>获取指定语言的国际化翻译字符串。<br>Get i18n translation strings for the specified language.</p>
+            <h4>Query Parameters</h4>
+            <table>
+                <tr><th>参数 / Parameter</th><th>类型 / Type</th><th>说明 / Description</th></tr>
+                <tr><td class="name">lang</td><td>string</td><td class="desc"><code>zh</code> 或 <code>en</code>，默认为 <code>zh</code>. zh or en, defaults to zh.</td></tr>
+            </table>
+            <h4>Response 200</h4>
+            <pre>{
+  <span class="json-key">"nav.workers"</span>: <span class="json-string">"Workers"</span>,
+  <span class="json-key">"nav.tasks"</span>: <span class="json-string">"Tasks"</span>,
+  <span class="json-key">"..."</span>: <span class="json-string">"..."</span>
+}</pre>
+        </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <p style="text-align:center;color:var(--text-dim);padding:40px 0;">
+        Diatom Gateway API v1.0 — Worker 对接协议
+        Diatom Gateway API v1.0 — Worker 对接协议 / Worker Integration Protocol
+    </p>
+
+</div>
+
+<script>
+    // Toggle endpoint details
+    function toggleEndpoint(el) {
+      el.classList.toggle('open');
+    }
+
+    // Toggle model details
+    function toggleModel(el) {
+      el.classList.toggle('open');
+    }
+
+    // Scroll to ID and highlight
+    function scrollToId(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.style.transition = 'outline 0.3s';
+        el.style.outline = '2px solid var(--accent)';
+        el.style.outlineOffset = '4px';
+        setTimeout(() => {
+          el.style.outline = 'none';
+        }, 2000);
+        // Update active nav
+        setActiveNav(id);
+      }
+    }
+
+    // Set active nav item
+    function setActiveNav(id) {
+      document.querySelectorAll('.nav-item').forEach(function(item) {
+        var href = item.getAttribute('href');
+        if (href === '#' + id) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    // Sidebar nav: prevent default anchor jump, use smooth scroll instead
+    document.querySelector('.sidebar-nav').addEventListener('click', function(e) {
+      var link = e.target.closest('a.nav-item');
+      if (link && link.getAttribute('href') && link.getAttribute('href').startsWith('#')) {
+        e.preventDefault();
+      }
+    });
+
+    // Scroll spy: update active nav based on scroll position
+    function updateActiveNavOnScroll() {
+      var navLinks = document.querySelectorAll('.nav-item');
+      var sections = [];
+      navLinks.forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          var el = document.getElementById(href.substring(1));
+          if (el) sections.push({ el: el, link: link });
+        }
+      });
+      var scrollPos = window.scrollY + 120;
+      var activeId = null;
+      sections.forEach(function(s) {
+        if (s.el.offsetTop <= scrollPos) {
+          activeId = s.el.id;
+        }
+      });
+      navLinks.forEach(function(link) { link.classList.remove('active'); });
+      if (activeId) {
+        var activeLink = document.querySelector('.nav-item[href="#' + activeId + '"]');
+        if (activeLink) activeLink.classList.add('active');
+      }
+    }
+    window.addEventListener('scroll', updateActiveNavOnScroll);
+
+    // Filter endpoints by search
+    function filterEndpoints() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const items = document.querySelectorAll('.nav-item');
+
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        const href = item.getAttribute('href') || '';
+        const match = text.includes(query) || href.includes(query);
+        item.style.display = match ? 'flex' : 'none';
+      });
+    }
+
+    // Auto-expand all endpoints on load
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.endpoint, .model').forEach(el => el.classList.add('open'));
+    });
+
+    // Keyboard shortcut: Ctrl+F focuses search
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        const search = document.getElementById('search');
+        if (document.activeElement !== search) {
+          e.preventDefault();
+          search.focus();
+        }
+      }
+    });
+</script>
+</body>
+</html>
+

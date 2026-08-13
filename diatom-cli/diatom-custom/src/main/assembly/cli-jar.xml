@@ -1,0 +1,36 @@
+<assembly>
+    <id>cli</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <!-- Bootstrap classes from unpacked core JAR -->
+        <fileSet>
+            <directory>${project.build.directory}/bootstrap</directory>
+            <outputDirectory>/</outputDirectory>
+        </fileSet>
+        <!-- Version files (core-version.txt, custom-version.txt) -->
+        <fileSet>
+            <directory>${project.build.directory}/custom</directory>
+            <outputDirectory>/custom</outputDirectory>
+        </fileSet>
+        <!-- Lib dependencies (copied by maven-dependency-plugin) -->
+        <fileSet>
+            <directory>${project.build.directory}/lib</directory>
+            <outputDirectory>/lib</outputDirectory>
+        </fileSet>
+    </fileSets>
+    <files>
+        <!-- Custom shaded JAR (custom code only) -->
+        <file>
+            <source>${project.build.directory}/custom-shaded.jar</source>
+            <outputDirectory>/custom</outputDirectory>
+        </file>
+        <!-- Sources JAR for self-update -->
+        <file>
+            <source>${project.build.directory}/custom-sources.jar</source>
+            <outputDirectory>/sources</outputDirectory>
+        </file>
+    </files>
+</assembly>

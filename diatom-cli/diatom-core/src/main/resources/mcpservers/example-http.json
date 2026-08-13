@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "codex": {
+      "url": "http://localhost:8080",
+      "mcpEndpoint": "/mcp",
+      "sseEndpoint": "/sse"
+    },
+    "custom-remote": {
+      "url": "https://mcp.example.com",
+      "mcpEndpoint": "/api/mcp",
+      "sseEndpoint": "/api/sse"
+    }
+  }
+}

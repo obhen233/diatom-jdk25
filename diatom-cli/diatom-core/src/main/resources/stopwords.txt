@@ -1,0 +1,32 @@
+# Chinese stop words for code search keyword filtering
+# One stop word per line; blank lines and lines starting with # are ignored
+的
+了
+在
+是
+和
+及
+等
+或
+与
+时
+时候
+选择
+没有
+有
+无
+不
+没
+新增
+添加
+修改
+删除
+查询
+查看
+点击
+打开
+怎么
+为什么
+如何
+什么
+是否

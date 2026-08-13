@@ -1,0 +1,22 @@
+# diatom-ide HorizontalPodAutoscaler
+# 基于 CPU 适度扩展。注意：应用是单用户会话模型，多副本间会话不共享，
+# 建议仅在前端/静态负载或编译任务并发时开启，并保持较低上限。
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: diatom-ide
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: diatom-ide
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

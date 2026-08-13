@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.obhen233</groupId>
+    <artifactId>diatom-custom-build</artifactId>
+    <version>@core.version@</version>
+    <packaging>jar</packaging>
+
+    <name>Diatom Custom Build</name>
+    <description>Standalone build for diatom-custom module (self-update)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.obhen233</groupId>
+            <artifactId>diatom-core</artifactId>
+            <version>@core.version@</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>25</source>
+                    <target>25</target>
+                    <release>25</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-runtime-dependencies</id>
+                        <phase>package</phase>
+                        <goals><goal>copy-dependencies</goal></goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <excludeTransitive>false</excludeTransitive>
+                            <excludeArtifactIds>diatom-core,diatom-custom</excludeArtifactIds>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>package-custom</id>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <outputFile>${project.build.directory}/custom-shaded.jar</outputFile>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <includes>
+                                        <!-- Include ALL com.github.obhen233 classes (except excluded below) -->
+                                        <!-- This automatically includes: -->
+                                        <!--   - com.github.obhen233.App (custom entry point) -->
+                                        <!--   - com.github.obhen233.custom.** (user SPI implementations) -->
+                                        <!--   - com.github.obhen233.bootstrap.CoreLauncher -->
+                                        <!--   - skills/** (skill files) -->
+                                        <include>com/github/obhen233/**</include>
+                                        <include>skills/**</include>
+                                        <include>META-INF/services/**</include>
+                                        <include>META-INF/maven/com.github.obhen233/diatom-custom/**</include>
+                                    </includes>
+                                    <excludes>
+                                        <!-- Exclude bootstrap and core from diatom-core -->
+                                        <!-- Bootstrap classes are provided by the Bootstrap JAR in lib/ -->
+                                        <exclude>com/github/obhen233/bootstrap/**</exclude>
+                                        <!-- Core classes come from the diatom-core dependency -->
+                                        <exclude>com/github/obhen233/core/**</exclude>
+                                        <!-- SPI interfaces come from diatom-core, only implementations belong here -->
+                                        <exclude>com/github/obhen233/spi/*.class</exclude>
+                                        <!-- Exclude signature files -->
+                                        <exclude>*.SF</exclude>
+                                        <exclude>*.DSA</exclude>
+                                        <exclude>*.RSA</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/BC*.DSA</exclude>
+                                        <exclude>META-INF/BC*.RSA</exclude>
+                                        <exclude>META-INF/BC*.SF</exclude>
+                                        <exclude>META-INF/signatures/**</exclude>
+                                        <exclude>META-INF/INDEX.LIST</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,173 @@
+# Worker Capability Document Example
+# Copy to {workspaceDir}/.diatom/capability.md or generate via --description.
+#
+# Usage:
+#   1. Write a capability.md describing what this Worker is good at
+#   2. Place it at {workspaceDir}/.diatom/capability.md
+#   3. Gateway reads it to route tasks to the most suitable Worker
+#
+# Alternatively, launch Worker with:
+#   --description "I specialize in ..."  (AI generates capability.md)
+#   --capability /path/to/capability.md  (use a custom file)
+
+# ============================================================
+# Example 1: Full-stack Web Developer Worker
+# ============================================================
+# # Worker Capability
+#
+# ## Basic Info
+# - **Worker ID**: worker-web-001
+# - **Model**: claude-sonnet-4-6
+# - **Tier**: standard
+# - **Supports Tool Calls**: yes
+# - **Supports Streaming**: yes
+# - **API Provider**: anthropic
+#
+# ## Strengths
+# - Full-stack web development (React, Spring Boot, PostgreSQL)
+# - RESTful & GraphQL API design and implementation
+# - Database schema design and optimization
+# - Frontend UI development with responsive design
+# - CI/CD pipeline configuration and automation
+#
+# ## Boundaries
+# - No internet access (cannot fetch external APIs)
+# - File operations limited to workspace directory
+# - Cannot deploy to production without confirmation
+# - No access to system credentials or secrets
+#
+# ## Suitable Task Types
+# - [x] feature_development (required)
+# - [x] bug_fix (preferred)
+# - [x] code_review
+# - [x] refactoring
+# - [x] database_migration (preferred)
+# - [ ] web_scraping (unsupported)
+# - [ ] image_analysis (unsupported)
+#
+# ## Complex Task Handling
+# - Supports complex tasks: yes
+# - Recommended max steps: 50
+# - Per-task token budget: 128000
+# - Max Output Tokens: 16384
+
+# ============================================================
+# Example 2: Data Science & Analytics Worker
+# ============================================================
+# # Worker Capability
+#
+# ## Basic Info
+# - **Worker ID**: worker-data-002
+# - **Model**: claude-opus-4-6
+# - **Tier**: premium
+# - **Supports Tool Calls**: yes
+# - **Supports Streaming**: yes
+# - **API Provider**: anthropic
+#
+# ## Strengths
+# - Data analysis and statistical modeling (Python, Pandas, NumPy)
+# - Machine learning pipeline development (scikit-learn, XGBoost)
+# - Data visualization and reporting (Matplotlib, Plotly)
+# - ETL pipeline design and implementation
+# - SQL query optimization and data warehouse design
+#
+# ## Boundaries
+# - No internet access (cannot fetch external APIs)
+# - File operations limited to workspace directory
+# - Cannot train large models (> 1GB dataset requires external infra)
+# - No access to production databases directly
+#
+# ## Suitable Task Types
+# - [x] data_analysis (required)
+# - [x] data_pipeline (preferred)
+# - [x] reporting
+# - [x] modeling (required)
+# - [x] testing
+# - [ ] web_scraping (unsupported)
+# - [ ] image_analysis (unsupported)
+#
+# ## Complex Task Handling
+# - Supports complex tasks: yes
+# - Recommended max steps: 50
+# - Per-task token budget: 128000
+# - Max Output Tokens: 32768
+
+# ============================================================
+# Example 3: DevOps & Infrastructure Worker
+# ============================================================
+# # Worker Capability
+#
+# ## Basic Info
+# - **Worker ID**: worker-ops-003
+# - **Model**: claude-sonnet-4-6
+# - **Tier**: standard
+# - **Supports Tool Calls**: yes
+# - **Supports Streaming**: no
+# - **API Provider**: openai
+#
+# ## Strengths
+# - Infrastructure as Code (Terraform, CloudFormation, Pulumi)
+# - Container orchestration (Docker, Kubernetes, Helm)
+# - CI/CD pipeline design (Jenkins, GitHub Actions, GitLab CI)
+# - Cloud services management (AWS, Azure, GCP)
+# - System monitoring and alerting (Prometheus, Grafana)
+#
+# ## Boundaries
+# - No internet access (cannot fetch external APIs)
+# - File operations limited to workspace directory
+# - Cannot modify production resources without confirmation
+# - No access to cloud provider credentials
+#
+# ## Suitable Task Types
+# - [x] infrastructure_setup (required)
+# - [x] deployment (required)
+# - [x] monitoring_config
+# - [x] security_audit (preferred)
+# - [x] automation
+# - [ ] web_scraping (unsupported)
+# - [ ] image_analysis (unsupported)
+#
+# ============================================================
+# Example 4: Attachment Processing Worker (Exclusive Capability)
+# ============================================================
+# # Worker Capability
+#
+# ## Basic Info
+# - **Worker ID**: worker-attach-004
+# - **Model**: claude-haiku-4-5
+# - **Tier**: standard
+# - **Supports Tool Calls**: no
+# - **Supports Streaming**: no
+# - **API Provider**: openai
+#
+# ## Strengths
+# - Image analysis and OCR recognition
+# - PDF document parsing and information extraction
+# - Image classification and tag generation
+# - Document format conversion
+# - Attachment content summarization
+#
+# ## Boundaries
+# - No internet access
+# - Only processes attachment files, no code
+# - Does not support code execution or command invocation
+# - File operations limited to workspace uploads directory
+#
+# ## Suitable Task Types
+# - [x] image_analysis (required)
+# - [x] document_parsing (required)
+# - [x] ocr_recognition (required)
+# - [x] content_summary
+# - [ ] code_generation (unsupported)
+# - [ ] deployment (unsupported)
+#
+# ## Complex Task Handling
+# - Supports complex tasks: no
+# - Recommended max steps: 10
+# - Per-task token budget: 32000
+# - Max Output Tokens: 4096
+# ## Complex Task Handling
+# - Supports complex tasks: yes
+# - Recommended max steps: 50
+# - Per-task token budget: 128000
+# - Max Output Tokens: 16384

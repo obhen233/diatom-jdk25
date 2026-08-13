@@ -1,0 +1,174 @@
+# Worker 能力自述文档示例
+# 复制到 {workspaceDir}/.diatom/capability.md 或通过 --description 自动生成。
+#
+# 使用方式：
+#   1. 编写 capability.md 描述该 Worker 擅长的工作
+#   2. 放到 {workspaceDir}/.diatom/capability.md
+#   3. Gateway 读取此文件以将任务路由到最合适的 Worker
+#
+# 或者在启动 Worker 时使用：
+#   --description "我擅长……"  (AI 自动生成 capability.md)
+#   --capability /path/to/capability.md  (使用自定义文件)
+
+# ============================================================
+# 示例 1：全栈 Web 开发 Worker
+# ============================================================
+# # Worker 能力自述
+#
+# ## 基本信息
+# - **Worker ID**: worker-web-001
+# - **模型**: claude-sonnet-4-6
+# - **等级**: standard
+# - **支持工具调用**: 是
+# - **支持流式输出**: 是
+# - **API 提供商**: anthropic
+#
+# ## 擅长领域
+# - 全栈 Web 开发（React, Spring Boot, PostgreSQL）
+# - RESTful 与 GraphQL API 设计与实现
+# - 数据库 schema 设计与性能优化
+# - 前端 UI 开发与响应式设计
+# - CI/CD 流水线配置与自动化
+#
+# ## 能力边界
+# - 无互联网访问能力（不能调用外部 API）
+# - 文件操作仅限于工作区目录
+# - 部署到生产环境需要用户确认
+# - 无权访问系统凭据或密钥
+#
+# ## 适合处理的任务类型
+# - [x] feature_development (required)
+# - [x] bug_fix (preferred)
+# - [x] code_review
+# - [x] refactoring
+# - [x] database_migration (preferred)
+# - [ ] web_scraping（不支持）
+# - [ ] image_analysis（不支持）
+#
+# ## 复杂任务处理能力
+# - 可处理复杂任务: 是
+# - 建议最大步骤数: 50
+# - 单任务建议 Token 预算: 128000
+# - 最大输出 Token: 16384
+
+# ============================================================
+# 示例 2：数据分析 Worker
+# ============================================================
+# # Worker 能力自述
+#
+# ## 基本信息
+# - **Worker ID**: worker-data-002
+# - **模型**: claude-opus-4-6
+# - **等级**: premium
+# - **支持工具调用**: 是
+# - **支持流式输出**: 是
+# - **API 提供商**: anthropic
+#
+# ## 擅长领域
+# - 数据分析与统计建模（Python, Pandas, NumPy）
+# - 机器学习流水线开发（scikit-learn, XGBoost）
+# - 数据可视化与报表生成（Matplotlib, Plotly）
+# - ETL 流水线设计与实现
+# - SQL 查询优化与数据仓库设计
+#
+# ## 能力边界
+# - 无互联网访问能力（不能调用外部 API）
+# - 文件操作仅限于工作区目录
+# - 无法训练大型模型（超过 1GB 数据集需外部基础设施）
+# - 不能直接访问生产数据库
+#
+# ## 适合处理的任务类型
+# - [x] data_analysis (required)
+# - [x] data_pipeline (preferred)
+# - [x] reporting
+# - [x] modeling (required)
+# - [x] testing
+# - [ ] web_scraping（不支持）
+# - [ ] image_analysis（不支持）
+#
+# ## 复杂任务处理能力
+# - 可处理复杂任务: 是
+# - 建议最大步骤数: 50
+# - 单任务建议 Token 预算: 128000
+# - 最大输出 Token: 32768
+
+# ============================================================
+# 示例 3：运维与基础设施 Worker
+# ============================================================
+# # Worker 能力自述
+#
+# ## 基本信息
+# - **Worker ID**: worker-ops-003
+# - **模型**: claude-sonnet-4-6
+# - **等级**: standard
+# - **支持工具调用**: 是
+# - **支持流式输出**: 否
+# - **API 提供商**: openai
+#
+# ## 擅长领域
+# - 基础设施即代码（Terraform, CloudFormation, Pulumi）
+# - 容器编排（Docker, Kubernetes, Helm）
+# - CI/CD 流水线设计（Jenkins, GitHub Actions, GitLab CI）
+# - 云服务管理（AWS, Azure, GCP）
+# - 系统监控与告警（Prometheus, Grafana）
+#
+# ## 能力边界
+# - 无互联网访问能力（不能调用外部 API）
+# - 文件操作仅限于工作区目录
+# - 修改生产资源需要用户确认
+# - 无权访问云平台凭据
+#
+# ## 适合处理的任务类型
+# - [x] infrastructure_setup (required)
+# - [x] deployment (required)
+# - [x] monitoring_config
+# - [x] security_audit (preferred)
+# - [x] automation
+# - [ ] web_scraping（不支持）
+# - [ ] image_analysis（不支持）
+#
+# ## 复杂任务处理能力
+# - 可处理复杂任务: 是
+# - 建议最大步骤数: 50
+# - 单任务建议 Token 预算: 128000
+# - 最大输出 Token: 16384
+#
+# ============================================================
+# 示例 4：附件处理专用 Worker
+# ============================================================
+# # Worker 能力自述
+#
+# ## 基本信息
+# - **Worker ID**: worker-attach-004
+# - **模型**: claude-haiku-4-5
+# - **等级**: standard
+# - **支持工具调用**: 否
+# - **支持流式输出**: 否
+# - **API 提供商**: openai
+#
+# ## 擅长领域
+# - 图像分析与 OCR 识别
+# - PDF 文档解析与信息提取
+# - 图片分类与标签生成
+# - 文档格式转换
+# - 附件内容摘要生成
+#
+# ## 能力边界
+# - 无互联网访问能力
+# - 仅处理附件文件，不处理代码
+# - 不支持任何代码执行或命令调用
+# - 文件操作仅限于工作区 uploads 目录
+#
+# ## 适合处理的任务类型
+# - [x] image_analysis (required)
+# - [x] document_parsing (required)
+# - [x] ocr_recognition (required)
+# - [x] content_summary
+# - [ ] code_generation（不支持）
+# - [ ] deployment（不支持）
+#
+# ## 复杂任务处理能力
+# - 可处理复杂任务: 否
+# - 建议最大步骤数: 10
+# - 单任务建议 Token 预算: 32000
+# - 最大输出 Token: 4096

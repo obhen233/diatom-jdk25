@@ -1,0 +1,9 @@
+# Diatom CLI Configuration
+# system_config 表提供所有配置项的完整默认值，此文件只需列出需要覆盖的项。
+# 通常只需要 api.key 和 api.url 即可工作。
+#
+# 完整配置项列表及其默认值请参考 system_config 表。
+
+api:
+  key: ""
+  url: "https://api.openai.com"

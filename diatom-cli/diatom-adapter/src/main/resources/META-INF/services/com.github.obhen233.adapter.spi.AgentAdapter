@@ -1,0 +1,5 @@
+# AgentAdapter implementations
+# Each line should be the fully qualified class name of an AgentAdapter implementation.
+# Concrete driver JARs add their implementations here.
+# Example:
+# com.example.driver.MyAgentAdapter

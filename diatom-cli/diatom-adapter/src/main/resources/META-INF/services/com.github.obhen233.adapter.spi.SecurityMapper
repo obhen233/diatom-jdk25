@@ -1,0 +1,5 @@
+# SecurityMapper implementations
+# Each line should be the fully qualified class name of a SecurityMapper implementation.
+# Concrete driver JARs add their implementations here.
+# The DefaultSecurityMapper is registered by the adapter module itself.
+com.github.obhen233.adapter.security.DefaultSecurityMapper

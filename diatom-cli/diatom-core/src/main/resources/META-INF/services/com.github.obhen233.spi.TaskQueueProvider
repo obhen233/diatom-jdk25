@@ -1,0 +1,2 @@
+# In-memory task queue (default, used when --queue true is set)
+com.github.obhen233.core.gateway.queue.InMemoryTaskQueue

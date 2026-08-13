@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diatom Gateway Monitor</title>
+<script src="/monitor/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    background: rgba(30,41,59,0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.navbar-brand {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+.navbar-brand span { color: #60a5fa; }
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.navbar-clock { color: #94a3b8; font-size: 14px; font-family: monospace; }
+.btn-logout {
+    padding: 6px 16px;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 6px;
+    color: #fca5a5;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+.btn-logout:hover { background: rgba(248,113,113,0.2); }
+
+/* Container */
+.container { max-width: 1440px; margin: 0 auto; padding: 20px 24px 40px; }
+
+/* Summary Cards */
+.summary-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.summary-card {
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+}
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+}
+.summary-card.workers { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04)); }
+.summary-card.workers::before { background: #3b82f6; }
+.summary-card.active-tasks { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); }
+.summary-card.active-tasks::before { background: #22c55e; }
+.summary-card.pending-tasks { background: linear-gradient(135deg, rgba(234,179,8,0.12), rgba(234,179,8,0.04)); }
+.summary-card.pending-tasks::before { background: #eab308; }
+.summary-card.total-tasks { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.04)); }
+.summary-card.total-tasks::before { background: #a855f7; }
+.summary-card.queue-depth { background: linear-gradient(135deg, rgba(251,146,60,0.12), rgba(251,146,60,0.04)); }
+.summary-card.queue-depth::before { background: #fb923c; }
+.summary-card .label { font-size: 13px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.summary-card .value { font-size: 32px; font-weight: 700; }
+
+/* Charts */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.chart-card {
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+}
+.chart-card .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.chart-card .chart-container {
+    width: 100%;
+    height: 280px;
+}
+
+/* Data Tables */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    margin-top: 16px;
+}
+.section-header:hover { background: rgba(30,41,59,0.7); }
+.section-header .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+.section-header .collapse-icon {
+    color: #64748b;
+    transition: transform 0.2s;
+    font-size: 13px;
+}
+.section-header.collapsed .collapse-icon { transform: rotate(-90deg); }
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    transition: max-height 0.3s ease;
+    max-height: 2000px;
+}
+.table-wrap.hidden { max-height: 0; overflow: hidden; border: none; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+table th {
+    background: rgba(51,65,85,0.5);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap;
+}
+table tr:hover td { background: rgba(255,255,255,0.02); }
+table tr:last-child td { border-bottom: none; }
+
+/* Status badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-online { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-offline { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-suspect { background: rgba(234,179,8,0.15); color: #facc15; }
+.badge-shutting_down { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-pending { background: rgba(234,179,8,0.15); color: #facc15; }
+.badge-in_progress { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-completed { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-failed { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-cancelled { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-assigned { background: rgba(168,85,247,0.15); color: #c084fc; }
+.badge-suspended { background: rgba(234,179,8,0.15); color: #facc15; }
+.badge-cancelling { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-timeout { background: rgba(249,115,22,0.15); color: #fb923c; }
+.badge-timeout_soon { background: rgba(249,115,22,0.15); color: #fb923c; }
+.badge-token_exhausted { background: rgba(168,85,247,0.15); color: #c084fc; }
+
+/* Load bar */
+.load-bar-wrap {
+    width: 100px;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.load-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.load-bar-fill.low { background: #22c55e; }
+.load-bar-fill.med { background: #eab308; }
+.load-bar-fill.high { background: #f87171; }
+
+/* Action button */
+.btn-action {
+    padding: 4px 12px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    color: #60a5fa;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+.btn-action:hover { background: rgba(59,130,246,0.2); }
+
+/* Modal */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    width: 700px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modal-header h3 { font-size: 16px; color: #e2e8f0; }
+.modal-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.modal-close:hover { background: rgba(255,255,255,0.06); }
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 20px;
+}
+.modal-tab {
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.15s, border-color 0.15s;
+}
+.modal-tab:hover { color: #e2e8f0; }
+.modal-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 200px;
+}
+.modal-tab-content { display: none; }
+.modal-tab-content.active { display: block; }
+
+/* Config list table */
+.config-table { width: 100%; }
+.config-table td { padding: 6px 10px; white-space: nowrap; }
+.config-table td:first-child { color: #94a3b8; font-weight: 600; width: 160px; }
+.config-table td:last-child { color: #e2e8f0; font-family: monospace; font-size: 12px; word-break: break-all; white-space: pre-wrap; }
+
+/* Config editor */
+.config-editor-form { display: flex; flex-direction: column; gap: 12px; }
+.config-editor-form .form-group { display: flex; flex-direction: column; gap: 6px; }
+.config-editor-form label { font-size: 13px; color: #94a3b8; font-weight: 500; }
+.config-editor-form select, .config-editor-form input {
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 13px;
+    outline: none;
+}
+.config-editor-form select:focus, .config-editor-form input:focus {
+    border-color: #60a5fa;
+}
+.btn-apply {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+}
+.btn-apply:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+.btn-reset {
+    padding: 10px 20px;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-reset:hover { background: rgba(248,113,113,0.2); }
+
+.modal-result {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 6px;
+    color: #4ade80;
+    font-size: 13px;
+    font-family: monospace;
+    display: none;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.modal-result.error { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.2); color: #f87171; }
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+.empty-state p { font-size: 14px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+}
+
+/* Loading overlay for initial load */
+.loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+.loading-overlay.hidden { display: none; }
+.loading-spinner-lg { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner-lg"></div></div>
+
+<nav class="navbar">
+    <div style="display:flex;align-items:center;">
+        <div class="navbar-brand" data-i18n="nav.brand"><span>Diatom</span> Gateway Monitor</div>
+        <div class="navbar-tabs" style="display:flex;gap:4px;margin-left:24px;">
+            <a href="/monitor/" style="padding:8px 12px;border-bottom:2px solid #60a5fa;color:#60a5fa;text-decoration:none;font-size:13px;font-weight:500;transition:color 0.15s;" data-i18n="nav.dashboard">Dashboard</a>
+            <a href="/monitor/workspace/" style="padding:8px 12px;border-bottom:2px solid transparent;color:#94a3b8;text-decoration:none;font-size:13px;font-weight:500;transition:color 0.15s;" data-i18n="nav.workspace">Workspace</a>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <button class="btn-lang" onclick="toggleLang()" style="padding:6px 12px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.25);border-radius:6px;color:#60a5fa;cursor:pointer;font-size:13px;">EN/中</button>
+        <span class="navbar-clock" id="clock"></span>
+        <button id="btnLogout" class="btn-logout" onclick="doLogout()" data-i18n="nav.logout">Logout</button>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Summary Cards -->
+    <div class="summary-row">
+        <div class="summary-card workers">
+            <div class="label" data-i18n="summary.workers">Online Workers</div>
+            <div class="value" id="statWorkers">0</div>
+        </div>
+        <div class="summary-card active-tasks">
+            <div class="label" data-i18n="summary.active_tasks">Active Tasks</div>
+            <div class="value" id="statActiveTasks">0</div>
+        </div>
+        <div class="summary-card pending-tasks">
+            <div class="label" data-i18n="summary.pending_tasks">Pending Tasks</div>
+            <div class="value" id="statPendingTasks">0</div>
+        </div>
+        <div class="summary-card total-tasks">
+            <div class="label" data-i18n="summary.total_tasks">Total Tasks</div>
+            <div class="value" id="statTotalTasks">0</div>
+        </div>
+        <div class="summary-card queue-depth">
+            <div class="label" data-i18n="summary.queue_depth">Queue Depth</div>
+            <div class="value" id="statQueueDepth">0</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title" data-i18n="chart.worker_load_trend">Worker Load Trend</div>
+            <div class="chart-container" id="chartLoadTrend"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title" data-i18n="chart.task_status_dist">Task Status Distribution</div>
+            <div class="chart-container" id="chartTaskDist"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title" data-i18n="chart.worker_pressure">Worker Pressure</div>
+            <div class="chart-container" id="chartWorkerPressure"></div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title" data-i18n="chart.pending_trend">Pending Task Trend</div>
+            <div class="chart-container" id="chartPendingTrend"></div>
+        </div>
+    </div>
+
+    <!-- Workers Table -->
+    <div class="section-header" onclick="toggleSection('workersSection')">
+        <span class="section-title" data-i18n="section.workers">&#x1f465; Workers</span>
+        <span class="collapse-icon">&#x25bc;</span>
+        <button class="btn-action" style="margin-left:auto;margin-right:8px;" onclick="event.stopPropagation();openGatewayRulesModal()" data-i18n="action.gateway_rules">Gateway Rules</button>
+        <button class="btn-action" style="margin-right:8px;" onclick="event.stopPropagation();openConfigModal('__gateway__')" data-i18n="action.gateway_config">Gateway Config</button>
+    </div>
+    <div class="table-wrap" id="workersSection">
+        <table>
+            <thead>
+                <tr>
+                    <th data-i18n="table.worker_id">Worker ID</th>
+                    <th data-i18n="table.status">Status</th>
+                    <th data-i18n="table.model">Model</th>
+                    <th data-i18n="table.group">Group</th>
+                    <th data-i18n="table.load">Load</th>
+                    <th data-i18n="table.active_max">Active / Max</th>
+                    <th data-i18n="table.gw_req">GW Req</th>
+                    <th data-i18n="table.heartbeat">Heartbeat</th>
+                    <th data-i18n="table.host_port">Host:Port</th>
+                    <th data-i18n="table.action">Action</th>
+                </tr>
+            </thead>
+            <tbody id="workersBody">
+                <tr><td colspan="10"><div class="empty-state"><p data-i18n="empty.no_workers">No workers</p></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="section-header" onclick="toggleSection('tasksSection')">
+        <span class="section-title" data-i18n="section.tasks">&#x1f4cb; Tasks</span>
+        <span class="collapse-icon">&#x25bc;</span>
+    </div>
+    <div class="table-wrap" id="tasksSection">
+        <table>
+            <thead>
+                <tr>
+                    <th data-i18n="table.task_id">Task ID</th>
+                    <th data-i18n="table.status">Status</th>
+                    <th data-i18n="table.worker">Worker</th>
+                    <th data-i18n="table.steps">Steps</th>
+                    <th data-i18n="table.tokens">Tokens</th>
+                    <th data-i18n="table.created">Created</th>
+                    <th data-i18n="table.updated">Updated</th>
+                </tr>
+            </thead>
+            <tbody id="tasksBody">
+                <tr><td colspan="7"><div class="empty-state"><p data-i18n="empty.no_tasks">No tasks</p></div></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Worker Config Modal -->
+<div class="modal-overlay" id="configModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><span id="modalConfigTitle">Worker Config</span>: <span id="modalWorkerId"></span></h3>
+            <button class="modal-close" onclick="closeConfigModal()">&times;</button>
+        </div>
+        <div class="modal-tabs">
+            <button class="modal-tab active" data-tab="configList" onclick="switchModalTab('configList')" data-i18n="modal.config_list">Config List</button>
+            <button class="modal-tab" data-tab="configEditor" onclick="switchModalTab('configEditor')" data-i18n="modal.config_editor">Config Editor</button>
+            <button class="modal-tab" data-tab="configReset" onclick="switchModalTab('configReset')" data-i18n="modal.config_reset">Config Reset</button>
+        </div>
+        <div class="modal-body">
+            <!-- Config List Tab -->
+            <div class="modal-tab-content active" id="tabConfigList">
+                <div id="configListContent"><p style="color:#64748b;" data-i18n="modal.loading">Loading...</p></div>
+            </div>
+            <!-- Config Editor Tab -->
+            <div class="modal-tab-content" id="tabConfigEditor">
+                <div class="config-editor-form">
+                    <div class="form-group">
+                        <label for="configKeySelect" data-i18n="modal.config_key">Config Key</label>
+                        <select id="configKeySelect"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="configValueInput" data-i18n="modal.value">Value</label>
+                        <input type="text" id="configValueInput" data-i18n-placeholder="modal.enter_value" placeholder="Enter new value">
+                    </div>
+                    <button class="btn-apply" onclick="applyConfigSet()" data-i18n="modal.apply">Apply</button>
+                </div>
+                <div class="modal-result" id="configSetResult"></div>
+            </div>
+            <!-- Config Reset Tab -->
+            <div class="modal-tab-content" id="tabConfigReset">
+                <div class="config-editor-form">
+                    <div class="form-group">
+                        <label for="configResetSelect" data-i18n="modal.config_key">Config Key to Reset</label>
+                        <select id="configResetSelect"></select>
+                    </div>
+                    <button class="btn-reset" onclick="applyConfigReset()" data-i18n="modal.reset_to_default">Reset to Default</button>
+                </div>
+                <div class="modal-result" id="configResetResult"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gateway Rules Modal -->
+<div class="modal-overlay" id="gatewayRulesModal">
+    <div class="modal" style="max-width:900px;">
+        <div class="modal-header">
+            <h3 data-i18n="modal.gateway_rules_title">Gateway Rules</h3>
+            <button class="modal-close" onclick="closeGatewayRulesModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="gatewayRulesContent"><p style="color:#64748b;" data-i18n="modal.rules_loading">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<!-- Worker Rules Modal -->
+<div class="modal-overlay" id="workerRulesModal">
+    <div class="modal" style="max-width:900px;">
+        <div class="modal-header">
+            <h3 data-i18n="modal.worker_rules_title">Worker Rules:</h3>
+            <span id="workerRulesWorkerId" style="color:#60a5fa;font-size:14px;font-weight:600;margin-left:4px;"></span>
+            <button class="modal-close" onclick="closeWorkerRulesModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="workerRulesContent"><p style="color:#64748b;" data-i18n="modal.rules_loading">Loading...</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== Auth helpers ==========
+function getToken() { return localStorage.getItem('diatom_monitor_token'); }
+
+function authHeaders() {
+    var t = getToken();
+    return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+
+function handleAuthError(resp) {
+    if (resp.status === 401) {
+        localStorage.removeItem('diatom_monitor_token');
+        window.location.href = '/monitor/login';
+        return true;
+    }
+    return false;
+}
+
+// ========== Auth state ==========
+var __authConfigured = false;
+
+function updateLogoutButton() {
+    var btn = document.getElementById('btnLogout');
+    if (btn) btn.style.display = __authConfigured ? '' : 'none';
+}
+
+// ========== Clock ==========
+function updateClock() {
+    var now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ========== i18n ==========
+window.__ = {};
+function t(key) { return window.__[key] || key; }
+
+function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        el.innerHTML = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n-placeholder');
+        el.placeholder = t(key);
+    });
+}
+
+function fetchTranslations(lang) {
+    var url = '/monitor/api/i18n';
+    if (lang) url += '?lang=' + encodeURIComponent(lang);
+    return fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            window.__ = data || {};
+            applyTranslations();
+        })
+        .catch(function(err) {
+            console.error('Failed to load translations:', err);
+        });
+}
+
+function getCurrentLang() {
+    return localStorage.getItem('diatom_monitor_lang') || '';
+}
+
+function toggleLang() {
+    var current = getCurrentLang();
+    var next = (current === 'zh' || current === '') ? 'en' : 'zh';
+    localStorage.setItem('diatom_monitor_lang', next);
+    fetchTranslations(next);
+}
+
+// Load saved language preference on init
+var savedLang = getCurrentLang();
+if (savedLang) fetchTranslations(savedLang);
+
+// ========== Logout ==========
+function doLogout() {
+    localStorage.removeItem('diatom_monitor_token');
+    window.location.href = '/monitor/login';
+}
+
+// ========== Toggle sections ==========
+function toggleSection(id) {
+    var el = document.getElementById(id);
+    var header = el.previousElementSibling;
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        header.classList.remove('collapsed');
+    } else {
+        el.classList.add('hidden');
+        header.classList.add('collapsed');
+    }
+}
+
+// ========== ECharts ==========
+var chartLoadTrend = echarts.init(document.getElementById('chartLoadTrend'));
+var chartTaskDist = echarts.init(document.getElementById('chartTaskDist'));
+var chartWorkerPressure = echarts.init(document.getElementById('chartWorkerPressure'));
+var chartPendingTrend = echarts.init(document.getElementById('chartPendingTrend'));
+
+var pendingHistoryData = [];
+var MAX_HISTORY = 30;
+
+// ========== Data fetch and render ==========
+function fetchStatus() {
+    fetch('/monitor/api/status', { headers: authHeaders() })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        __authConfigured = data.authConfigured === true;
+        updateLogoutButton();
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        updateSummary(data);
+        renderWorkerTable(data);
+        renderTaskTable(data);
+        renderCharts(data);
+    })
+    .catch(function(err) {
+        console.error('Fetch error:', err);
+    });
+}
+
+function updateSummary(data) {
+    document.getElementById('statWorkers').textContent = data.onlineWorkers || 0;
+    document.getElementById('statActiveTasks').textContent = data.activeTasks || 0;
+    document.getElementById('statPendingTasks').textContent = data.pendingTasks || 0;
+    document.getElementById('statTotalTasks').textContent = data.totalTasks || 0;
+    var queue = (data.concurrency && data.concurrency.queued) || 0;
+    document.getElementById('statQueueDepth').textContent = queue;
+}
+
+function renderWorkerTable(data) {
+    var workers = data.workers || [];
+    var tbody = document.getElementById('workersBody');
+    if (workers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><p>No workers</p></div></td></tr>';
+        return;
+    }
+    var html = '';
+    workers.forEach(function(w) {
+        var loadPct = Math.round((w.currentLoad || 0) * 100);
+        var loadClass = loadPct < 50 ? 'low' : (loadPct < 80 ? 'med' : 'high');
+        var statusClass = 'badge-' + (w.status || '').toLowerCase();
+        var heartbeat = w.heartbeatAge != null ? (w.heartbeatAge > 1000 ? (w.heartbeatAge / 1000).toFixed(1) + 's' : w.heartbeatAge + 'ms') : '-';
+
+        html += '<tr>';
+        html += '<td><code>' + esc(w.workerId) + '</code></td>';
+        html += '<td><span class="badge ' + statusClass + '">' + esc(w.status || '-') + '</span></td>';
+        html += '<td>' + esc(w.model || '-') + '</td>';
+        html += '<td>' + esc(w.group || '-') + '</td>';
+        html += '<td><div class="load-bar-wrap"><div class="load-bar-fill ' + loadClass + '" style="width:' + loadPct + '%"></div></div> ' + loadPct + '%</td>';
+        html += '<td>' + (w.activeTasks != null ? w.activeTasks : '-') + ' / ' + (w.maxConcurrency || '-') + '</td>';
+        html += '<td>' + (w.gatewayActiveRequests != null ? w.gatewayActiveRequests : '-') + '</td>';
+        html += '<td>' + heartbeat + '</td>';
+        html += '<td>' + esc(w.host || '-') + ':' + (w.port || '-') + '</td>';
+        var isGatewayInstance = w.tier === 'gateway' || w.tier === 'gateway-proxy' || w.tier === 'adapter';
+        if (isGatewayInstance) {
+            var label = w.tier === 'gateway' ? 'Gateway' : (w.tier === 'adapter' ? 'Adapter' : 'Proxy');
+            html += '<td><span style="color:#64748b;font-size:12px;">' + label + '</span></td>';
+        } else {
+            html += '<td><button class="btn-action" onclick="openConfigModal(\'' + esc(w.workerId) + '\')">' + t('action.config') + '</button> <button class="btn-action" onclick="openWorkerRulesModal(\'' + esc(w.workerId) + '\')">' + t('action.rules') + '</button></td>';
+        }
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function renderTaskTable(data) {
+    var tasks = data.tasks || [];
+    var tbody = document.getElementById('tasksBody');
+    if (tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>No tasks</p></div></td></tr>';
+        return;
+    }
+    var html = '';
+    tasks.forEach(function(t) {
+        var statusClass = 'badge-' + (t.status || '').toLowerCase();
+        var created = t.createdAt ? new Date(t.createdAt).toLocaleString() : '-';
+        var updated = t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '-';
+        html += '<tr>';
+        html += '<td><code>' + esc(t.taskId) + '</code></td>';
+        html += '<td><span class="badge ' + statusClass + '">' + esc(t.status || '-') + '</span></td>';
+        html += '<td>' + esc(t.workerId || '-') + '</td>';
+        html += '<td>' + (t.currentStep || 0) + '</td>';
+        html += '<td>' + (t.totalTokens || 0) + '</td>';
+        html += '<td>' + created + '</td>';
+        html += '<td>' + updated + '</td>';
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function renderCharts(data) {
+    // 1. Worker Load Trend (line chart)
+    var loadHistory = data.workerLoadHistory || [];
+    var loadSeries = {};
+    var loadTimes = [];
+    loadHistory.forEach(function(pt) {
+        var ts = pt[0];
+        var wid = pt[1];
+        var val = pt[2];
+        if (!loadSeries[wid]) loadSeries[wid] = [];
+        loadSeries[wid].push([ts, val]);
+        if (loadTimes.indexOf(ts) < 0) loadTimes.push(ts);
+    });
+    var loadOption = {
+        tooltip: { trigger: 'axis' },
+        legend: { data: Object.keys(loadSeries), textStyle: { color: '#94a3b8' } },
+        grid: { left: 50, right: 20, top: 40, bottom: 30 },
+        xAxis: { type: 'time', axisLabel: { color: '#64748b' }, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+        yAxis: { type: 'value', min: 0, max: 1, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } } },
+        series: Object.keys(loadSeries).map(function(wid) {
+            return {
+                name: wid,
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                data: loadSeries[wid],
+                lineStyle: { width: 2 }
+            };
+        })
+    };
+    chartLoadTrend.setOption(loadOption, true);
+
+    // 2. Task Status Distribution (pie)
+    var tasks = data.tasks || [];
+    var statusCounts = {};
+    tasks.forEach(function(t) {
+        var s = t.status || 'UNKNOWN';
+        statusCounts[s] = (statusCounts[s] || 0) + 1;
+    });
+    var colorMap = {
+        'COMPLETED': '#22c55e', 'IN_PROGRESS': '#3b82f6', 'PENDING': '#eab308',
+        'FAILED': '#ef4444', 'CANCELLED': '#64748b', 'ASSIGNED': '#a855f7',
+        'SUSPENDED': '#f59e0b', 'CANCELLING': '#f87171', 'TIMEOUT': '#fb923c',
+        'TIMEOUT_SOON': '#fb923c', 'TOKEN_EXHAUSTED': '#c084fc', 'SUSPECT': '#facc15'
+    };
+    var pieData = Object.keys(statusCounts).map(function(s) {
+        return { name: s, value: statusCounts[s], itemStyle: { color: colorMap[s] || '#64748b' } };
+    });
+    var noDataLabel = t('chart.no_data');
+    var distOption = {
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        series: [{
+            type: 'pie',
+            radius: ['35%', '65%'],
+            center: ['50%', '55%'],
+            data: pieData.length > 0 ? pieData : [{ name: noDataLabel, value: 1, itemStyle: { color: '#334155' } }],
+            label: { color: '#94a3b8', fontSize: 12 },
+            labelLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+        }]
+    };
+    chartTaskDist.setOption(distOption, true);
+
+    // 3. Worker Pressure (bar)
+    var workers = data.workers || [];
+    var loadLabel = t('chart.legend.current_load');
+    var maxLabel = t('chart.legend.max_concurrency');
+    var pressureOption = {
+        tooltip: { trigger: 'axis' },
+        legend: { data: [loadLabel, maxLabel], textStyle: { color: '#94a3b8' } },
+        grid: { left: 50, right: 20, top: 40, bottom: 50 },
+        xAxis: {
+            type: 'category',
+            data: workers.map(function(w) { return w.workerId; }),
+            axisLabel: { color: '#64748b', rotate: 15 },
+            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: { color: '#64748b' },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } }
+        },
+        series: [
+            {
+                name: loadLabel,
+                type: 'bar',
+                data: workers.map(function(w) { return Math.round((w.currentLoad || 0) * w.maxConcurrency); }),
+                itemStyle: { color: '#3b82f6', borderRadius: [4,4,0,0] }
+            },
+            {
+                name: maxLabel,
+                type: 'bar',
+                data: workers.map(function(w) { return w.maxConcurrency || 0; }),
+                itemStyle: { color: 'rgba(59,130,246,0.2)', borderRadius: [4,4,0,0] }
+            }
+        ]
+    };
+    chartWorkerPressure.setOption(pressureOption, true);
+
+    // 4. Pending Task Trend
+    var now = Date.now();
+    pendingHistoryData.push([now, data.pendingTasks || 0]);
+    if (pendingHistoryData.length > MAX_HISTORY) pendingHistoryData.shift();
+    var pendingOption = {
+        tooltip: { trigger: 'axis', formatter: function(params) {
+            var p = params[0];
+            return new Date(p.value[0]).toLocaleTimeString() + '<br/>' + t('summary.pending_tasks') + ': ' + p.value[1];
+        }},
+        grid: { left: 50, right: 20, top: 20, bottom: 30 },
+        xAxis: { type: 'time', axisLabel: { color: '#64748b' }, axisLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } } },
+        yAxis: { type: 'value', min: 0, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.04)' } } },
+        series: [{
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            data: pendingHistoryData,
+            lineStyle: { color: '#eab308', width: 2 },
+            areaStyle: { color: 'rgba(234,179,8,0.08)' }
+        }]
+    };
+    chartPendingTrend.setOption(pendingOption, true);
+
+    // Handle resize
+    setTimeout(function() {
+        chartLoadTrend.resize();
+        chartTaskDist.resize();
+        chartWorkerPressure.resize();
+        chartPendingTrend.resize();
+    }, 100);
+}
+
+// ========== Config Modal ==========
+var currentConfigWorkerId = '';
+
+function openConfigModal(workerId) {
+    document.getElementById('configModal').classList.add('active');
+    var isGateway = workerId === '__gateway__';
+    document.getElementById('modalConfigTitle').textContent = isGateway ? 'Gateway Config' : 'Worker Config';
+    document.getElementById('modalWorkerId').textContent = isGateway ? 'gateway' : workerId;
+    currentConfigWorkerId = workerId;
+    switchModalTab('configList');
+    loadConfigList(workerId);
+}
+
+function closeConfigModal() {
+    document.getElementById('configModal').classList.remove('active');
+    currentConfigWorkerId = '';
+}
+
+// Close modal on overlay click
+document.getElementById('configModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfigModal();
+});
+
+function switchModalTab(tabId) {
+    document.querySelectorAll('#configModal .modal-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('#configModal .modal-tab-content').forEach(function(c) { c.classList.remove('active'); });
+    document.querySelector('#configModal .modal-tab[data-tab="' + tabId + '"]').classList.add('active');
+    document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).classList.add('active');
+
+    if (tabId === 'configEditor' && currentConfigWorkerId) {
+        loadConfigKeys(currentConfigWorkerId);
+    }
+    if (tabId === 'configReset' && currentConfigWorkerId) {
+        loadConfigKeys(currentConfigWorkerId);
+    }
+}
+
+function loadConfigList(workerId) {
+    var container = document.getElementById('configListContent');
+    container.innerHTML = '<p style="color:#64748b;">' + t('modal.loading') + '</p>';
+
+    fetch('/monitor/api/config', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ workerId: workerId, command: 'config list' })
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        if (data.status === 'ok' && data.output) {
+            var lines = data.output.split('\n');
+            var html = '<table class="config-table">';
+            var started = false;
+            lines.forEach(function(line) {
+                line = line.trim();
+                // Parse "key = value" format or passthrough
+                var eqIdx = line.indexOf(' = ');
+                if (eqIdx > 0) {
+                    var k = line.substring(0, eqIdx);
+                    var v = line.substring(eqIdx + 3);
+                    html += '<tr><td>' + esc(k) + '</td><td>' + esc(v) + '</td></tr>';
+                    started = true;
+                } else if (started && line !== '') {
+                    // Section headers like "=== API Configs ==="
+                    html += '<tr><td colspan="2" style="color:#64748b;font-size:11px;padding-top:12px;">' + esc(line) + '</td></tr>';
+                }
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="color:#f87171;">Failed to load config: ' + esc(data.error || 'unknown error') + '</p>';
+        }
+    })
+    .catch(function(err) {
+        container.innerHTML = '<p style="color:#f87171;">Error: ' + esc(err.message) + '</p>';
+    });
+}
+
+function loadConfigKeys(workerId) {
+    fetch('/monitor/api/config', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ workerId: workerId, command: 'config list' })
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        var keys = [];
+        if (data.status === 'ok' && data.output) {
+            data.output.split('\n').forEach(function(line) {
+                line = line.trim();
+                var eqIdx = line.indexOf(' = ');
+                if (eqIdx > 0) keys.push(line.substring(0, eqIdx));
+            });
+        }
+        var editorSelect = document.getElementById('configKeySelect');
+        var resetSelect = document.getElementById('configResetSelect');
+        var html = keys.map(function(k) { return '<option value="' + esc(k) + '">' + esc(k) + '</option>'; }).join('');
+        if (keys.length === 0) html = '<option value="">' + t('modal.no_config_keys') + '</option>';
+        editorSelect.innerHTML = html;
+        resetSelect.innerHTML = html;
+    })
+    .catch(function(err) {
+        console.error('Failed to load config keys:', err);
+    });
+}
+
+function applyConfigSet() {
+    var key = document.getElementById('configKeySelect').value;
+    var value = document.getElementById('configValueInput').value.trim();
+    var resultEl = document.getElementById('configSetResult');
+
+    if (!key || !value) {
+        resultEl.className = 'modal-result error';
+        resultEl.style.display = 'block';
+        resultEl.textContent = t('modal.select_key');
+        return;
+    }
+
+    resultEl.style.display = 'none';
+
+    fetch('/monitor/api/config', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ workerId: currentConfigWorkerId, command: 'config set ' + key + ' ' + value })
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        resultEl.style.display = 'block';
+        if (data.status === 'ok') {
+            resultEl.className = 'modal-result';
+            resultEl.textContent = data.output || t('modal.config_updated');
+        } else {
+            resultEl.className = 'modal-result error';
+            resultEl.textContent = data.error || 'Failed to set config';
+        }
+    })
+    .catch(function(err) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'modal-result error';
+        resultEl.textContent = 'Error: ' + err.message;
+    });
+}
+
+function applyConfigReset() {
+    var key = document.getElementById('configResetSelect').value;
+    var resultEl = document.getElementById('configResetResult');
+
+    if (!key) {
+        resultEl.className = 'modal-result error';
+        resultEl.style.display = 'block';
+        resultEl.textContent = t('modal.select_key_reset');
+        return;
+    }
+
+    resultEl.style.display = 'none';
+
+    fetch('/monitor/api/config', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ workerId: currentConfigWorkerId, command: 'config reset ' + key })
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        resultEl.style.display = 'block';
+        if (data.status === 'ok') {
+            resultEl.className = 'modal-result';
+            resultEl.textContent = data.output || t('modal.config_reset_success');
+        } else {
+            resultEl.className = 'modal-result error';
+            resultEl.textContent = data.error || 'Failed to reset config';
+        }
+    })
+    .catch(function(err) {
+        resultEl.style.display = 'block';
+        resultEl.className = 'modal-result error';
+        resultEl.textContent = 'Error: ' + err.message;
+    });
+}
+
+// ========== Rules Modal (command_rules management) ==========
+function openGatewayRulesModal() {
+    document.getElementById('gatewayRulesModal').classList.add('active');
+    loadGatewayRulesContent();
+}
+
+function closeGatewayRulesModal() {
+    document.getElementById('gatewayRulesModal').classList.remove('active');
+}
+
+document.getElementById('gatewayRulesModal').addEventListener('click', function(e) {
+    if (e.target === this) closeGatewayRulesModal();
+});
+
+function openWorkerRulesModal(workerId) {
+    document.getElementById('workerRulesModal').classList.add('active');
+    document.getElementById('workerRulesWorkerId').textContent = workerId;
+    loadWorkerRulesContent(workerId);
+}
+
+function closeWorkerRulesModal() {
+    document.getElementById('workerRulesModal').classList.remove('active');
+}
+
+document.getElementById('workerRulesModal').addEventListener('click', function(e) {
+    if (e.target === this) closeWorkerRulesModal();
+});
+
+function loadGatewayRulesContent() {
+    var container = document.getElementById('gatewayRulesContent');
+    container.innerHTML = '<p style="color:#64748b;">' + t('modal.rules_loading') + '</p>';
+    fetch('/monitor/api/rules?target=gateway', {
+        headers: authHeaders()
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        if (data.status === 'ok' && data.rules) {
+            container.innerHTML = renderRulesTable(data.rules, 'gateway');
+        } else {
+            container.innerHTML = '<p style="color:#f87171;">' + t('modal.rules_error') + ': ' + esc(data.error || 'unknown error') + '</p>';
+        }
+    })
+    .catch(function(err) {
+        container.innerHTML = '<p style="color:#f87171;">' + t('modal.rules_error') + ': ' + esc(err.message) + '</p>';
+    });
+}
+
+function loadWorkerRulesContent(workerId) {
+    var container = document.getElementById('workerRulesContent');
+    container.innerHTML = '<p style="color:#64748b;">' + t('modal.rules_loading') + '</p>';
+    fetch('/monitor/api/rules?target=worker&workerId=' + encodeURIComponent(workerId), {
+        headers: authHeaders()
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        if (data.status === 'ok' && data.output) {
+            // Worker returns command output format, convert to rules array
+            var rules = parseWorkerRulesOutput(data.output);
+            container.innerHTML = renderRulesTable(rules, 'worker', workerId);
+        } else if (data.rules) {
+            container.innerHTML = renderRulesTable(data.rules, 'worker', workerId);
+        } else {
+            container.innerHTML = '<p style="color:#f87171;">' + t('modal.rules_error') + ': ' + esc(data.error || 'unknown error') + '</p>';
+        }
+    })
+    .catch(function(err) {
+        container.innerHTML = '<p style="color:#f87171;">' + t('modal.rules_error') + ': ' + esc(err.message) + '</p>';
+    });
+}
+
+function parseWorkerRulesOutput(output) {
+    // Try JSON parse first
+    try { var parsed = JSON.parse(output); if (parsed.rules) return parsed.rules; } catch(e) {}
+    // If output is text format from command output, return empty array (worker uses JSON API now)
+    return [];
+}
+
+function renderRulesTable(rules, target, workerId) {
+    var html = '';
+    // Add form
+    html += '<div class="config-editor-form" style="margin-bottom:16px;">';
+    html += '<div class="form-group"><label>' + t('modal.rules_add_title') + '</label></div>';
+    html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+    html += '<select id="ruleModeSelect" style="padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e2e8f0;font-size:13px;">';
+    html += '<option value="agent">' + t('modal.rules_mode_agent') + '</option>';
+    html += '<option value="terminal">' + t('modal.rules_mode_terminal') + '</option>';
+    html += '</select>';
+    html += '<select id="ruleTypeSelect" style="padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e2e8f0;font-size:13px;">';
+    html += '<option value="allowed">' + t('modal.rules_type_allowed') + '</option>';
+    html += '<option value="blocked">' + t('modal.rules_type_blocked') + '</option>';
+    html += '<option value="dangerous">' + t('modal.rules_type_dangerous') + '</option>';
+    html += '</select>';
+    html += '<input type="text" id="rulePatternInput" style="padding:8px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#e2e8f0;font-size:13px;flex:1;min-width:150px;" placeholder="' + t('modal.rules_placeholder_pattern') + '">';
+    html += '<button class="btn-action" onclick="addRule(\'' + target + '\',\'' + (workerId || '') + '\')">' + t('modal.rules_add') + '</button>';
+    html += '</div>';
+    html += '<div class="modal-result" id="ruleAddResult" style="display:none;"></div>';
+    html += '</div>';
+
+    if (!rules || rules.length === 0) {
+        html += '<p style="color:#64748b;text-align:center;padding:20px;">' + t('modal.rules_no_rules') + '</p>';
+        return html;
+    }
+
+    html += '<table class="config-table">';
+    html += '<thead><tr>';
+    html += '<th>' + t('modal.rules_id') + '</th>';
+    html += '<th>' + t('modal.rules_mode') + '</th>';
+    html += '<th>' + t('modal.rules_type') + '</th>';
+    html += '<th>' + t('modal.rules_pattern') + '</th>';
+    html += '<th>' + t('modal.rules_source') + '</th>';
+    html += '<th>' + t('modal.rules_enabled') + '</th>';
+    html += '<th>' + t('modal.rules_action') + '</th>';
+    html += '</tr></thead><tbody>';
+
+    rules.forEach(function(rule) {
+        var id = rule.id || 0;
+        html += '<tr>';
+        html += '<td><code>' + id + '</code></td>';
+        html += '<td>' + esc(rule.mode || '-') + '</td>';
+        html += '<td>' + esc(rule.type || '-') + '</td>';
+        html += '<td><code>' + esc(rule.pattern || '-') + '</code></td>';
+        html += '<td>' + esc(rule.source || '-') + '</td>';
+        var enabled = rule.enabled === true || rule.enabled === 1;
+        html += '<td>' + (enabled ? t('modal.rules_yes') : t('modal.rules_no')) + '</td>';
+        html += '<td>';
+        if (!enabled) {
+            html += '<button class="btn-action" onclick="ruleAction(\'enable\',' + id + ',\'' + target + '\',\'' + (workerId || '') + '\')" style="margin-right:4px;">' + t('modal.rules_enable') + '</button>';
+        } else {
+            html += '<button class="btn-action" onclick="ruleAction(\'disable\',' + id + ',\'' + target + '\',\'' + (workerId || '') + '\')" style="margin-right:4px;">' + t('modal.rules_disable') + '</button>';
+        }
+        html += '<button class="btn-action" onclick="ruleAction(\'delete\',' + id + ',\'' + target + '\',\'' + (workerId || '') + '\')" style="color:#f87171;border-color:rgba(248,113,113,0.25);">' + t('modal.rules_delete') + '</button>';
+        html += '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // Reset button
+    html += '<div style="margin-top:12px;">';
+    html += '<button class="btn-reset" onclick="ruleAction(\'reset\',0,\'' + target + '\',\'' + (workerId || '') + '\')">' + t('modal.rules_reset') + '</button>';
+    html += '</div>';
+
+    return html;
+}
+
+function addRule(target, workerId) {
+    var mode = document.getElementById('ruleModeSelect').value;
+    var type = document.getElementById('ruleTypeSelect').value;
+    var pattern = document.getElementById('rulePatternInput').value.trim();
+    var resultEl = document.getElementById('ruleAddResult');
+
+    if (!pattern) {
+        resultEl.className = 'modal-result error';
+        resultEl.style.display = 'block';
+        resultEl.textContent = t('modal.rules_placeholder_pattern');
+        return;
+    }
+
+    if (target === 'gateway') {
+        fetch('/monitor/api/rules', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ target: 'gateway', action: 'add', mode: mode, type: type, pattern: pattern })
+        })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.status === 'ok') {
+                resultEl.className = 'modal-result';
+                resultEl.style.display = 'block';
+                resultEl.textContent = t('modal.rules_added');
+                document.getElementById('rulePatternInput').value = '';
+                loadGatewayRulesContent();
+            } else {
+                resultEl.className = 'modal-result error';
+                resultEl.style.display = 'block';
+                resultEl.textContent = data.error || t('modal.rules_error');
+            }
+        })
+        .catch(function(err) {
+            resultEl.className = 'modal-result error';
+            resultEl.style.display = 'block';
+            resultEl.textContent = err.message;
+        });
+    } else {
+        fetch('/monitor/api/rules', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ target: 'worker', workerId: workerId, action: 'add', mode: mode, type: type, pattern: pattern })
+        })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.status === 'ok') {
+                resultEl.className = 'modal-result';
+                resultEl.style.display = 'block';
+                resultEl.textContent = t('modal.rules_added');
+                document.getElementById('rulePatternInput').value = '';
+                loadWorkerRulesContent(workerId);
+            } else {
+                resultEl.className = 'modal-result error';
+                resultEl.style.display = 'block';
+                resultEl.textContent = data.error || t('modal.rules_error');
+            }
+        })
+        .catch(function(err) {
+            resultEl.className = 'modal-result error';
+            resultEl.style.display = 'block';
+            resultEl.textContent = err.message;
+        });
+    }
+}
+
+function ruleAction(action, id, target, workerId) {
+    var body = { target: target, action: action, id: String(id) };
+    if (target === 'worker') body.workerId = workerId;
+
+    fetch('/monitor/api/rules', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body)
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(data) {
+        if (!data) return;
+        if (data.status === 'ok') {
+            if (target === 'gateway') {
+                loadGatewayRulesContent();
+            } else {
+                loadWorkerRulesContent(workerId);
+            }
+        } else {
+            alert(data.error || t('modal.rules_error'));
+        }
+    })
+    .catch(function(err) {
+        alert(err.message);
+    });
+}
+
+// ========== Utility ==========
+function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ========== Init ==========
+// Always try fetching status first - if auth is required,
+// handleAuthError will redirect to login on 401
+fetchStatus();
+setInterval(fetchStatus, 5000);
+
+// Resize handler
+window.addEventListener('resize', function() {
+    chartLoadTrend.resize();
+    chartTaskDist.resize();
+    chartWorkerPressure.resize();
+    chartPendingTrend.resize();
+});
+</script>
+</body>
+</html>

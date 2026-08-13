@@ -1,0 +1,16 @@
+com.github.obhen233.starter.SharedAutoConfiguration
+com.github.obhen233.starter.DiatomAutoConfiguration
+com.github.obhen233.starter.CoreCommandConfiguration
+com.github.obhen233.starter.CoreI18nAutoConfiguration
+com.github.obhen233.starter.PipelineConfiguration
+com.github.obhen233.starter.PluginPathConfiguration
+com.github.obhen233.starter.gateway.DiatomGatewayAutoConfiguration
+com.github.obhen233.starter.gateway.cloud.RegistryServiceAutoConfiguration
+com.github.obhen233.starter.gateway.cloud.CloudDiscoveryAutoConfiguration
+com.github.obhen233.starter.gateway.remote.DiatomRemoteModeConfiguration
+com.github.obhen233.starter.mode.WorkerModeConfiguration
+com.github.obhen233.starter.mode.AdapterModeConfiguration
+com.github.obhen233.starter.gateway.monitor.MonitorAutoConfiguration
+com.github.obhen233.starter.gateway.DiatomWebAutoConfiguration
+com.github.obhen233.starter.gateway.child.ChildGatewayAutoConfiguration
+com.github.obhen233.starter.terminal.TerminalAutoConfiguration

@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  springboot-app:
+    build: .                           # 使用当前目录下的 Dockerfile 构建镜像
+    container_name: diatom-ide-app    # 容器名称，方便管理
+    ports:
+      - "8080:8080"                    # 宿主机端口:容器端口
+    environment:
+#      - SPRING_PROFILES_ACTIVE=prod    # 激活生产环境配置（可选）
+      - JAVA_OPTS=-Xms256m              # JVM 内存参数（最大堆由 -XX:MaxRAMPercentage=75.0 容器感知决定）
+    restart: unless-stopped            # 容器异常退出时自动重启

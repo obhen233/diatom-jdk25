@@ -1,0 +1,311 @@
+# Deploy Pipeline Configuration Example
+# Copy this file to your project's .diatom directory as deploy.yaml and customize it.
+#
+# Usage:
+#   1. Place deploy.yaml in your project's .diatom directory
+#   2. Open the project in Diatom IDE
+#   3. Click [▶ Deploy] button in the terminal toolbar
+#
+# Variable substitution:
+#   {{VARIABLE_NAME}} is replaced with values from the "variables" section
+#   Built-in variables: PROJECT_NAME, PROJECT_DIR, WORKSPACE_DIR, timestamp
+#
+# Supported action types:
+#   run_command  - Execute shell command locally
+#   maven        - Execute Maven goals locally
+#   gradle       - Execute Gradle tasks locally
+#   docker       - Execute Docker commands locally
+#   ssh_command  - Execute command on remote host via SSH (requires JSch)
+#   scp          - Upload files to remote host via SFTP/SCP
+#   git          - Git operations (clone, checkout, pull, push, commit, tag, branch, status)
+#   svn          - SVN operations (checkout, update, commit, export, status)
+#   jenkins      - Trigger Jenkins jobs via HTTP API
+#   k8s          - Kubernetes operations via kubectl CLI
+#
+# SSH authentication:
+#   - RECOMMENDED: use key: /path/to/private_key
+#   - ALTERNATIVE: use password: "plain" (auto-encrypted to $ENC$... on save)
+#   - OPTIONAL: omit both key and password to be prompted interactively
+#     during deployment (CLI uses masked console input).
+#
+# Host key verification (STRICT_HOST_KEY_CHECK):
+#   Defaults to "ask" — first-time SSH connections prompt for confirmation
+#   (console in CLI, pluggable provider in IDE). Set to "no" to skip,
+#   or "yes" for strict verification.
+#
+# Host resolution rules:
+#   - Single-host mode: define hosts under top-level "servers". Remote steps (ssh_command/scp)
+#     may omit host/cluster and will automatically target the single server.
+#   - Cluster mode: define hosts under clusters.<name>.hosts. Remote steps MUST include
+#     cluster: "<name>".
+#
+# Profiles (multi-environment):
+#   Add a "profiles" section with environment-specific variable overrides.
+#   Profile variables OVERRIDE top-level variables of the same name.
+#   Profiles do NOT change steps/servers/clusters structure.
+#   CLI: 'deploy' uses "default" profile if it exists, otherwise uses top-level variables only.
+#   CLI: 'deploy dev' uses the "dev" profile.
+#   IDE: Profile selector dropdown appears next to the Deploy button.
+
+# ============================================================
+# Example 1: Single Server - Maven Build + SCP Upload + SSH Start
+# ============================================================
+#version: "1.0"
+#name: "lowcode-platform-deploy"
+#
+#servers:
+#  - host: "127.0.0.1"
+#    user: "pingwei"
+#    port: 2222
+#    # RECOMMENDED: key authentication
+#    key: "~/.ssh/id_rsa"
+#    # OR password authentication (auto-encrypted on save)
+#    # password: "your-password"
+#
+#variables:
+#  APP_PORT: "8080"
+#  JAR_NAME: "lowcode-platform-1.0.0.jar"
+#
+#steps:
+#  - name: "Build JAR"
+#    action: "maven"
+#    command: "clean package -DskipTests"
+#
+#  - name: "Create deploy directory"
+#    action: "ssh_command"
+#    commands:
+#      - "mkdir -p /home/pingwei/lowcode"
+#
+#  - name: "Upload artifact"
+#    action: "scp"
+#    files:
+#      - local: "target/{{JAR_NAME}}"
+#        remote: "/home/pingwei/lowcode/{{JAR_NAME}}"
+#
+#  - name: "Start application"
+#    action: "ssh_command"
+#    commands:
+#      - "cd /home/pingwei/lowcode"
+#      - "nohup java -jar {{JAR_NAME}} > app.log 2>&1 &"
+#      - "echo 'Application started'"
+#
+#health_check:
+#  # Health check runs AFTER all pipeline steps complete (post-pipeline).
+#  # Default: enabled=false. Set enabled: true and type (http/tcp/command)
+#  # to activate. Supported: type, port, path, timeout, retries, command.
+#  enabled: false
+
+# ============================================================
+# Example 2: Single Server - Gradle Build + SSH Deploy
+# ============================================================
+#version: "1.0"
+#name: "gradle-app-deploy"
+#
+#servers:
+#  - host: "192.168.1.10"
+#    user: "deploy"
+#    port: 22
+#    key: "~/.ssh/id_rsa"
+#
+#steps:
+#  - name: "Build"
+#    action: "run_command"
+#    command: "./gradlew build"
+#
+#  - name: "Deploy"
+#    action: "ssh_command"
+#    commands:
+#      - "mkdir -p /opt/{{PROJECT_NAME}}"
+#      - "systemctl restart {{PROJECT_NAME}}"
+
+# ============================================================
+# Example 3: Single Server - Docker Build/Push + SSH Pull/Run
+# ============================================================
+#version: "1.0"
+#name: "docker-app-deploy"
+#
+#servers:
+#  - host: "1.2.3.4"
+#    user: "deploy"
+#    port: 22
+#    key: "~/.ssh/id_rsa"
+#
+#variables:
+#  REGISTRY: "docker.io/myuser"
+#  TAG: "latest"
+#
+#steps:
+#  - name: "Build JAR"
+#    action: "maven"
+#    command: "clean package -DskipTests"
+#
+#  - name: "Build & Push Docker Image"
+#    action: "docker"
+#    commands:
+#      - "build -t {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}} ."
+#      - "push {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#
+#  - name: "Deploy to Remote"
+#    action: "ssh_command"
+#    commands:
+#      - "docker pull {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#      - "docker stop {{PROJECT_NAME}} || true"
+#      - "docker rm {{PROJECT_NAME}} || true"
+#      - "docker run -d --name {{PROJECT_NAME}} -p 8080:8080 {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+
+# ============================================================
+# Example 4: Cluster Deployment (Multi-host + Rolling Update + Health Check)
+# ============================================================
+#version: "1.0"
+#name: "cluster-deploy"
+#
+#clusters:
+#  production:
+#    strategy: "rolling"
+#    health_check:
+#      enabled: true
+#      type: "http"
+#      port: 8080
+#      path: "/health"
+#      timeout: 30
+#      retries: 5
+#    hosts:
+#      - host: "192.168.1.10"
+#        user: "deploy"
+#        port: 22
+#        key: "~/.ssh/prod_key"
+#      - host: "192.168.1.11"
+#        user: "deploy"
+#        port: 22
+#        key: "~/.ssh/prod_key"
+#    variables:
+#      APP_PORT: "8080"
+#      JAVA_OPTS: "-Xmx2g"
+#
+#variables:
+#  REGISTRY: "docker.io/myuser"
+#  TAG: "latest"
+#
+#steps:
+#  - name: "Build JAR"
+#    action: "maven"
+#    command: "clean package -DskipTests"
+#
+#  - name: "Build & Push Docker Image"
+#    action: "docker"
+#    commands:
+#      - "build -t {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}} ."
+#      - "push {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#
+#  - name: "Rolling Update to Cluster"
+#    action: "ssh_command"
+#    cluster: "production"
+#    commands:
+#      - "docker pull {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#      - "docker stop {{PROJECT_NAME}} || true"
+#      - "docker rm {{PROJECT_NAME}} || true"
+#      - "docker run -d --name {{PROJECT_NAME}} -p {{APP_PORT}}:8080 {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}} java {{JAVA_OPTS}} -jar /app.jar"
+
+# ============================================================
+# Example 5: Git Clone + K8s Deploy
+# ============================================================
+#version: "1.0"
+#name: "k8s-deploy"
+#
+#variables:
+#  GIT_USER: "your-git-user"
+#  GIT_PASSWORD: "your-git-token"
+#  REPO_URL: "https://github.com/myorg/myapp.git"
+#  REGISTRY: "docker.io/myuser"
+#  TAG: "1.0.0"
+#  K8S_NAMESPACE: "production"
+#  K8S_CONTEXT: "prod-cluster"
+#
+#steps:
+#  - name: "Clone Repository"
+#    action: "git"
+#    command: "clone {{REPO_URL}} ./source"
+#
+#  - name: "Checkout Tag"
+#    action: "git"
+#    command: "checkout tags/{{TAG}}"
+#
+#  - name: "Build Docker Image"
+#    action: "docker"
+#    command: "build -t {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}} ./source"
+#
+#  - name: "Push to Registry"
+#    action: "docker"
+#    command: "push {{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#
+#  - name: "Deploy to K8s"
+#    action: "k8s"
+#    commands:
+#      - "set image deployment/{{PROJECT_NAME}} {{PROJECT_NAME}}={{REGISTRY}}/{{PROJECT_NAME}}:{{TAG}}"
+#      - "rollout status deployment/{{PROJECT_NAME}}"
+
+# ============================================================
+# Example 6: SVN Checkout + Jenkins Trigger
+# ============================================================
+#version: "1.0"
+#name: "svn-jenkins-pipeline"
+#
+#variables:
+#  SVN_USER: "svnuser"
+#  SVN_PASSWORD: "svnpass"
+#  SVN_TRUST_CERT: "true"
+#  JENKINS_URL: "https://jenkins.example.com"
+#  JENKINS_USER: "jenkins-user"
+#  JENKINS_TOKEN: "your-api-token"
+#
+#steps:
+#  - name: "Checkout from SVN"
+#    action: "svn"
+#    command: "checkout https://svn.example.com/repo/trunk ./build"
+#
+#  - name: "Update Sources"
+#    action: "svn"
+#    command: "update"
+#
+#  - name: "Trigger Jenkins Build"
+#    action: "jenkins"
+#    command: "build MyApp-Build -p BRANCH=trunk -p TAG=release-1.0.0"
+
+# ============================================================
+# Example 7: Multi-Environment Profiles (dev/uat/pro)
+# ============================================================
+#version: "1.0"
+#name: "multi-env-deploy"
+#
+#servers:
+#  - host: "{{DEPLOY_HOST}}"
+#    user: "{{SSH_USER}}"
+#    port: "{{SSH_PORT}}"
+#
+#variables:
+#  JAR_NAME: "app.jar"
+#  DEPLOY_HOST: "localhost"       # default, overridden by profile
+#  SSH_USER: "root"
+#  SSH_PORT: "22"
+#
+#profiles:
+#  default:                       # 'deploy' (no arg) uses this
+#    DEPLOY_HOST: "dev.example.com"
+#  dev:
+#    DEPLOY_HOST: "dev.example.com"
+#    SSH_USER: "dev"
+#  uat:
+#    DEPLOY_HOST: "uat.example.com"
+#  pro:
+#    DEPLOY_HOST: "prod.example.com"
+#    SSH_PORT: "2222"
+#
+#steps:
+#  - name: "Build"
+#    action: "maven"
+#    command: "clean package -DskipTests"
+#  - name: "Deploy"
+#    action: "ssh_command"
+#    commands:
+#      - "java -jar /opt/{{JAR_NAME}}"
+

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diatom Workspace</title>
+<script src="jsplumb.min.js"></script>
+<script>
+// ========== i18n ==========
+var i18nData = {};
+var currentLang = localStorage.getItem('diatom_lang') || 'zh';
+
+function loadI18n(callback) {
+    fetch('/monitor/api/i18n?lang=' + currentLang)
+        .then(function(r) { return r.json(); })
+        .then(function(data) { i18nData = data; if (callback) callback(); })
+        .catch(function() { i18nData = {}; if (callback) callback(); });
+}
+
+function t(key) { return i18nData[key] || key; }
+
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        var text = t(key);
+        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.setAttribute('placeholder', text);
+        } else if (el.tagName === 'OPTION') {
+            el.textContent = text;
+        } else {
+            el.innerHTML = text.replace(/\n/g, '<br>');
+        }
+    });
+}
+
+function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('diatom_lang', currentLang);
+    loadI18n(function() { applyI18n(); onI18nChange(); });
+}
+
+function onI18nChange() {
+    // Re-render topology and tasks with translated text
+    if (topologyData) {
+        renderTopology(topologyData);
+        renderRecentTasks(topologyData.tasks || []);
+        if (selectedWorkerId) {
+            if (selectedWorkerId === 'gateway') showGatewayInfo(topologyData.gateway);
+            else showWorkerInfo(selectedWorkerId, topologyData.workers || []);
+        }
+    }
+    refreshTasks();
+}
+</script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+}
+.navbar {
+    background: rgba(30,41,59,0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.navbar-brand { font-size: 18px; font-weight: 600; color: #e2e8f0; }
+.navbar-brand span { color: #60a5fa; }
+.navbar-tabs { display: flex; gap: 4px; margin-left: 32px; }
+.nav-tab {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s, border-color 0.15s;
+}
+.nav-tab:hover { color: #e2e8f0; }
+.nav-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+.navbar-right { display: flex; align-items: center; gap: 16px; }
+.navbar-clock { color: #94a3b8; font-size: 14px; font-family: monospace; }
+
+.container { max-width: 1440px; margin: 0 auto; padding: 20px 24px 40px; }
+
+/* Tab Content */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Topology Panel */
+.topology-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.topology-graph {
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 12px;
+    min-height: 500px;
+    position: relative;
+}
+.topology-graph .graph-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+#topologyCanvas {
+    width: 100%;
+    height: 460px;
+    border-radius: 8px;
+    background: rgba(15,23,42,0.5);
+    position: relative;
+    overflow: hidden;
+}
+.topo-node {
+    position: absolute;
+    background: #0f172a;
+    border: 2px solid #e2e8f0;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #e2e8f0;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 80px;
+}
+.topo-node:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 0 12px rgba(96,165,250,0.3);
+}
+.topo-node.selected {
+    border-color: #60a5fa;
+    box-shadow: 0 0 16px rgba(96,165,250,0.4);
+}
+.topo-node.gateway-node {
+    width: 120px;
+    height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    border-width: 2px;
+}
+.topo-node.worker-node {
+    padding: 6px 12px;
+    min-height: 36px;
+    border-width: 2px;
+}
+.topo-node.offline { border-style: dashed; border-color: #475569; opacity: 0.7; }
+.topo-node.suspect { border-style: dashed; border-color: #eab308; }
+
+/* Info Panel */
+.info-panel {
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    min-height: 500px;
+}
+.info-panel .panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.info-panel-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #64748b;
+    font-size: 14px;
+    text-align: center;
+}
+.info-panel-empty span { display: block; margin-top: 8px; font-size: 12px; color: #475569; }
+.worker-detail { font-size: 13px; }
+.worker-detail .field { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.worker-detail .field .label { color: #94a3b8; }
+.worker-detail .field .value { color: #e2e8f0; font-weight: 500; text-align: right; max-width: 200px; word-break: break-all; }
+.worker-detail .field-header { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 0 4px; border: none; }
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-online { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-offline { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-suspect { background: rgba(234,179,8,0.15); color: #facc15; }
+.badge-shutting_down { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-pending { background: rgba(234,179,8,0.15); color: #facc15; }
+.badge-in_progress { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.badge-completed { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-failed { background: rgba(248,113,113,0.15); color: #f87171; }
+.badge-cancelled { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+/* Summary Cards */
+.summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.summary-card {
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+}
+.summary-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.summary-card.workers { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04)); }
+.summary-card.workers::before { background: #3b82f6; }
+.summary-card.active-tasks { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04)); }
+.summary-card.active-tasks::before { background: #22c55e; }
+.summary-card.pending-tasks { background: linear-gradient(135deg, rgba(234,179,8,0.12), rgba(234,179,8,0.04)); }
+.summary-card.pending-tasks::before { background: #eab308; }
+.summary-card.total-tasks { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.04)); }
+.summary-card.total-tasks::before { background: #a855f7; }
+.summary-card .label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.summary-card .value { font-size: 28px; font-weight: 700; }
+
+/* Tables */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px 12px 0 0;
+    margin-top: 16px;
+}
+.section-header .section-title { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th {
+    background: rgba(51,65,85,0.5);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #94a3b8;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap;
+}
+table tr:hover td { background: rgba(255,255,255,0.02); }
+table tr:last-child td { border-bottom: none; }
+
+.btn-action {
+    padding: 4px 12px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    color: #60a5fa;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+.btn-action:hover { background: rgba(59,130,246,0.2); }
+.btn-danger {
+    padding: 4px 12px;
+    background: rgba(248,113,113,0.12);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 4px;
+    color: #fca5a5;
+    cursor: pointer;
+    font-size: 12px;
+}
+.btn-danger:hover { background: rgba(248,113,113,0.2); }
+
+.empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+.empty-state p { font-size: 14px; }
+
+/* Load bar */
+.load-bar-wrap { width: 80px; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; }
+.load-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.load-bar-fill.low { background: #22c55e; }
+.load-bar-fill.med { background: #eab308; }
+.load-bar-fill.high { background: #f87171; }
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: #0f172a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+.loading-overlay.hidden { display: none; }
+.loading-spinner-lg { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 900px) {
+    .topology-layout { grid-template-columns: 1fr; }
+    .summary-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner-lg"></div></div>
+
+<nav class="navbar">
+    <div class="navbar-left" style="display:flex;align-items:center;gap:24px;">
+        <div class="navbar-brand" data-i18n="workspace.nav.brand"><span>Diatom</span> Workspace</div>
+        <div class="navbar-tabs">
+            <button class="nav-tab active" data-tab="topology" onclick="switchTab('topology')" data-i18n="workspace.tab.topology">Topology</button>
+            <button class="nav-tab" data-tab="tasks" onclick="switchTab('tasks')" data-i18n="workspace.tab.tasks">Tasks</button>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <a href="/monitor/" style="color:#94a3b8;font-size:13px;text-decoration:none;" data-i18n="nav.dashboard">Dashboard</a>
+        <a href="/monitor/topology/" style="color:#94a3b8;font-size:13px;text-decoration:none;margin-left:12px;" data-i18n="nav.topology-editor">Topology Editor</a>
+        <button class="btn-lang" onclick="toggleLang()" style="padding:6px 12px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.25);border-radius:6px;color:#60a5fa;cursor:pointer;font-size:13px;margin-left:12px;">EN/中</button>
+        <span class="navbar-clock" id="clock"></span>
+    </div>
+</nav>
+
+<div class="container">
+    <!-- Tab: Topology -->
+    <div class="tab-content active" id="tabTopology">
+        <div class="summary-row">
+            <div class="summary-card workers">
+                <div class="label" data-i18n="summary.workers">Workers</div>
+                <div class="value" id="statWorkers">0</div>
+            </div>
+            <div class="summary-card active-tasks">
+                <div class="label" data-i18n="summary.active_tasks">Active Tasks</div>
+                <div class="value" id="statActiveTasks">0</div>
+            </div>
+            <div class="summary-card pending-tasks">
+                <div class="label" data-i18n="summary.pending_tasks">Pending</div>
+                <div class="value" id="statPendingTasks">0</div>
+            </div>
+            <div class="summary-card total-tasks">
+                <div class="label" data-i18n="summary.total_tasks">Total Tasks</div>
+                <div class="value" id="statTotalTasks">0</div>
+            </div>
+        </div>
+
+        <div class="topology-layout">
+            <div class="topology-graph">
+                <div class="graph-title" data-i18n="workspace.topology.title">Gateway-Worker Topology</div>
+                <div id="topologyCanvas"></div>
+            </div>
+            <div class="info-panel" id="infoPanel">
+                <div class="panel-title" data-i18n="workspace.info.title">Worker Details</div>
+                <div class="info-panel-empty" id="infoPanelEmpty">
+                    <span id="infoPanelHint" data-i18n="workspace.topology.click_hint">Click a worker node to view details</span>
+                </div>
+                <div class="worker-detail" id="workerDetail" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <span class="section-title" data-i18n="workspace.section.recent_tasks">Recent Tasks</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="table.task_id">Task ID</th>
+                        <th data-i18n="table.status">Status</th>
+                        <th data-i18n="table.worker">Worker</th>
+                        <th data-i18n="table.steps">Steps</th>
+                        <th data-i18n="table.tokens">Tokens</th>
+                        <th data-i18n="table.created">Created</th>
+                        <th data-i18n="table.action">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksBody">
+                    <tr><td colspan="7"><div class="empty-state"><p>No tasks</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Tasks -->
+    <div class="tab-content" id="tabTasks">
+        <div class="section-header">
+            <span class="section-title" data-i18n="workspace.section.all_tasks">All Tasks</span>
+            <div>
+                <select id="taskFilterStatus" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#e2e8f0;font-size:12px;outline:none;margin-right:8px;" onchange="refreshTasks()">
+                    <option value="" data-i18n="workspace.filter.all_status">All Status</option>
+                    <option value="PENDING" data-i18n="badge.pending">Pending</option>
+                    <option value="ASSIGNED" data-i18n="badge.assigned">Assigned</option>
+                    <option value="IN_PROGRESS" data-i18n="badge.in_progress">In Progress</option>
+                    <option value="COMPLETED" data-i18n="badge.completed">Completed</option>
+                    <option value="FAILED" data-i18n="badge.failed">Failed</option>
+                    <option value="CANCELLED" data-i18n="badge.cancelled">Cancelled</option>
+                </select>
+                <button class="btn-action" onclick="refreshTasks()" data-i18n="workspace.btn.refresh">Refresh</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="table.task_id">Task ID</th>
+                        <th data-i18n="table.status">Status</th>
+                        <th data-i18n="table.worker">Worker</th>
+                        <th data-i18n="table.steps">Steps</th>
+                        <th data-i18n="table.tokens">Tokens</th>
+                        <th data-i18n="table.created">Created</th>
+                        <th data-i18n="table.updated">Updated</th>
+                        <th data-i18n="table.action">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="allTasksBody">
+                    <tr><td colspan="8"><div class="empty-state"><p>No tasks</p></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== Auth helpers ==========
+function getToken() { return localStorage.getItem('diatom_monitor_token'); }
+function authHeaders() {
+    var t = getToken();
+    return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+function handleAuthError(resp) {
+    if (resp.status === 401) {
+        localStorage.removeItem('diatom_monitor_token');
+        window.location.href = '/monitor/login';
+        return true;
+    }
+    return false;
+}
+
+// ========== Clock ==========
+function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ========== Tab switching ==========
+function switchTab(name) {
+    document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === name); });
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.toggle('active', t.id === 'tab' + name.charAt(0).toUpperCase() + name.slice(1)); });
+    if (name === 'tasks') refreshTasks();
+}
+
+// ========== Topology ==========
+var topoPlumb = null;
+var topologyData = null;
+var selectedWorkerId = null;
+
+function loadTopology() {
+    var prefix = '/monitor';
+    var prevSelected = selectedWorkerId;
+    fetch(prefix + '/workspace/api/topology', { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            topologyData = data;
+            updateSummaryCards(data);
+            renderTopology(data);
+            if (prevSelected) {
+                if (prevSelected === 'gateway') {
+                    var gwInfo = (data.gateways && data.gateways.length > 0) ? data.gateways[0] : data.gateway;
+                    showGatewayInfo(gwInfo);
+                } else {
+                    showWorkerInfo(prevSelected, data.workers || []);
+                }
+            }
+            renderRecentTasks(data.tasks || []);
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        })
+        .catch(function(err) {
+            console.error('Failed to load topology:', err);
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        });
+}
+
+function updateSummaryCards(data) {
+    var workers = data.workers || [];
+    var tasks = data.tasks || [];
+    var active = 0, pending = 0;
+    tasks.forEach(function(t) {
+        if (t.status === 'IN_PROGRESS' || t.status === 'ASSIGNED') active++;
+        else if (t.status === 'PENDING') pending++;
+    });
+    document.getElementById('statWorkers').textContent = workers.length;
+    document.getElementById('statActiveTasks').textContent = active;
+    document.getElementById('statPendingTasks').textContent = pending;
+    document.getElementById('statTotalTasks').textContent = tasks.length;
+}
+
+function renderTopology(data) {
+    var workers = data.workers || [];
+    var connections = data.connections || [];
+    var gateways = data.gateways || [];
+    var container = document.getElementById('topologyCanvas');
+
+    // Destroy previous jsPlumb instance
+    if (topoPlumb) {
+        try { topoPlumb.reset(); } catch(e) {}
+        topoPlumb = null;
+    }
+    container.innerHTML = '';
+
+    var cw = container.clientWidth || 800;
+    var gwEls = {};
+    var gwEl = null;
+    // 注册中心直读模式（有 gateways 数组）不画 gateway↔worker 连线；否则走旧单 gateway 逻辑
+    var legacySingleGateway = gateways.length === 0;
+
+    // Create Gateway node(s)
+    if (gateways.length > 0) {
+        // 多 gateway：每个注册节点渲染为顶部一行的独立节点
+        var gwCount = gateways.length;
+        var gwStep = Math.min(220, Math.max(150, (cw - 60) / Math.max(gwCount, 1)));
+        var gwStartX = (cw - gwStep * (gwCount - 1)) / 2 - 60;
+        gateways.forEach(function(g, i) {
+            var el = document.createElement('div');
+            el.id = 'topo-gateway-' + i;
+            el.className = 'topo-node gateway-node';
+            var label = (g.host || 'Gateway') + ':' + g.port;
+            if (label.length > 18) label = label.substring(0, 16) + '..';
+            el.textContent = label;
+            el.title = (g.id || '') + ' | ' + t('workspace.info.workers') + ': ' + (g.workerCount || 0);
+            el.style.left = Math.round(gwStartX + gwStep * i) + 'px';
+            el.style.top = '20px';
+            container.appendChild(el);
+            gwEls[i] = el;
+            el.addEventListener('click', (function(gg) {
+                return function() {
+                    document.querySelectorAll('.topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+                    el.classList.add('selected');
+                    selectedWorkerId = 'gateway';
+                    showGatewayInfo(gg);
+                };
+            })(g));
+        });
+    } else {
+        // 旧单 gateway 模式
+        gwEl = document.createElement('div');
+        gwEl.id = 'topo-gateway';
+        gwEl.className = 'topo-node gateway-node';
+        gwEl.textContent = 'Gateway';
+        gwEl.style.left = Math.floor(cw / 2 - 60) + 'px';
+        gwEl.style.top = '20px';
+        container.appendChild(gwEl);
+        gwEl.addEventListener('click', function() {
+            document.querySelectorAll('.topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+            gwEl.classList.add('selected');
+            selectedWorkerId = 'gateway';
+            showGatewayInfo(data.gateway);
+        });
+    }
+
+    // Create Worker nodes
+    var workerEls = {};
+    workers.forEach(function(w) {
+        var el = document.createElement('div');
+        el.id = 'topo-' + w.workerId;
+        var cls = 'topo-node worker-node';
+        if (w.status === 'OFFLINE' || w.status === 'SHUTTING_DOWN') cls += ' offline';
+        else if (w.status === 'SUSPECT') cls += ' suspect';
+        el.className = cls;
+        var label = w.workerId;
+        if (label.length > 20) label = label.substring(0, 18) + '..';
+        el.textContent = label;
+        el.title = w.workerId + ' (' + (w.model || '') + ') - ' + Math.round((w.currentLoad || 0) * 100) + '% load';
+        container.appendChild(el);
+        workerEls[w.workerId] = el;
+    });
+
+    // Position workers in a single centered row (matching topology editor layout)
+    var workerCount = workers.length;
+    var xStep = Math.min(200, Math.max(130, (cw - 60) / Math.max(workerCount, 1)));
+    var startX = (cw - xStep * (workerCount - 1)) / 2 - 40;
+    var workerTop = legacySingleGateway ? 90 : 110;
+    workers.forEach(function(w, i) {
+        var el = workerEls[w.workerId];
+        el.style.left = Math.round(startX + xStep * i) + 'px';
+        el.style.top = workerTop + 'px';
+    });
+
+    // Init jsPlumb
+    topoPlumb = jsPlumb.getInstance({
+        Container: container,
+        Connector: ['Flowchart', { cornerRadius: 5 }],
+        PaintStyle: { stroke: '#475569', strokeWidth: 2 },
+        Endpoint: ['Blank', { radius: 0 }],
+        Anchor: ['Bottom', 'Top']
+    });
+
+    // Register nodes as jsPlumb elements
+    if (gwEl) topoPlumb.manage(gwEl.id, gwEl);
+    Object.keys(gwEls).forEach(function(i) {
+        topoPlumb.manage(gwEls[i].id, gwEls[i]);
+    });
+    Object.keys(workerEls).forEach(function(id) {
+        topoPlumb.manage(workerEls[id].id, workerEls[id]);
+    });
+
+    // 直读模式（多 gateway）下 gateway 与 worker 无直连关系，不画连线
+    if (legacySingleGateway) {
+        // Create connections from connections data
+        connections.forEach(function(c) {
+            var fromId = c.from === c.to ? null : c.from;
+            var toId = c.from === c.to ? null : c.to;
+            if (!fromId || !toId) return;
+            var fromEl = document.getElementById('topo-' + fromId) || (fromId === 'gateway' ? gwEl : null);
+            var toEl = document.getElementById('topo-' + toId) || (toId === 'gateway' ? gwEl : null);
+            if (!fromEl || !toEl) return;
+            try {
+                topoPlumb.connect({
+                    source: fromEl.id,
+                    target: toEl.id,
+                    anchors: ['Bottom', 'Top'],
+                    paintStyle: { stroke: c.status === 'active' ? '#60a5fa' : '#475569', strokeWidth: Math.max(1, Math.min(5, c.activeRequests || 1)) },
+                    endpoint: ['Blank', { radius: 0 }],
+                    connector: ['Flowchart', { cornerRadius: 5 }],
+                    overlays: [['Arrow', { location: 0.5, width: 10, length: 8, paintStyle: { stroke: c.status === 'active' ? '#60a5fa' : '#475569' } }]]
+                });
+            } catch(e) {}
+        });
+
+        // If no connections data, infer from worker registry (Gateway → all workers)
+        if (connections.length === 0 && workers.length > 0) {
+            workers.forEach(function(w) {
+                try {
+                    topoPlumb.connect({
+                        source: gwEl.id,
+                        target: 'topo-' + w.workerId,
+                        anchors: ['Bottom', 'Top'],
+                        paintStyle: { stroke: '#475569', strokeWidth: 2 },
+                        endpoint: ['Blank', { radius: 0 }],
+                        connector: ['Flowchart', { cornerRadius: 5 }],
+                        overlays: [['Arrow', { location: 0.5, width: 10, length: 8, paintStyle: { stroke: '#475569' } }]]
+                    });
+                } catch(e) {}
+            });
+        }
+    }
+
+    // Repaint
+    topoPlumb.repaintEverything();
+
+    // Click handlers — Workers
+    workers.forEach(function(w) {
+        var el = workerEls[w.workerId];
+        el.addEventListener('click', function() {
+            document.querySelectorAll('.topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+            el.classList.add('selected');
+            selectedWorkerId = w.workerId;
+            showWorkerInfo(w.workerId, workers);
+        });
+    });
+}
+
+function showGatewayInfo(gw) {
+    document.getElementById('infoPanelEmpty').style.display = 'none';
+    var detail = document.getElementById('workerDetail');
+    detail.style.display = 'block';
+    selectedWorkerId = 'gateway';
+    detail.innerHTML =
+        '<div class="field field-header">' + t('workspace.info.gateway') + '</div>' +
+        '<div class="field"><span class="label">ID</span><span class="value">' + (gw.id || 'gateway') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.host') + '</span><span class="value">' + (gw.host || 'localhost') + ':' + gw.port + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.version') + '</span><span class="value">' + (gw.version || '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.workers') + '</span><span class="value">' + (gw.workerCount || 0) + '</span></div>';
+}
+
+function showWorkerInfo(workerId, workers) {
+    var w = null;
+    for (var i = 0; i < workers.length; i++) {
+        if (workers[i].workerId === workerId) { w = workers[i]; break; }
+    }
+    if (!w) return;
+    document.getElementById('infoPanelEmpty').style.display = 'none';
+    var detail = document.getElementById('workerDetail');
+    detail.style.display = 'block';
+    selectedWorkerId = workerId;
+
+    var traits = w.traits && w.traits.length ? w.traits.join(', ') : '-';
+    var boundaries = w.boundaries && w.boundaries.length ? w.boundaries.join('; ') : 'none';
+    var statusBadge = 'badge-' + w.status.toLowerCase();
+    var hbText = w.heartbeatAge < 60000 ? t('workspace.info.just_now') : Math.round(w.heartbeatAge / 1000) + t('workspace.info.seconds_ago');
+
+    detail.innerHTML =
+        '<div class="field field-header">' + w.workerId + '</div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.status') + '</span><span class="value"><span class="badge ' + statusBadge + '">' + w.status + '</span></span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.model') + '</span><span class="value">' + (w.model || '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.group') + '</span><span class="value">' + (w.group || '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.host') + '</span><span class="value">' + w.host + ':' + w.port + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.tier') + '</span><span class="value">' + (w.tier || 'worker') + '</span></div>' +
+        '<div class="field field-header">' + t('workspace.info.metrics') + '</div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.load') + '</span><span class="value">' + Math.round(w.currentLoad * 100) + '% <span class="load-bar-wrap"><span class="load-bar-fill ' + (w.currentLoad < 0.5 ? 'low' : w.currentLoad < 0.8 ? 'med' : 'high') + '" style="width:' + Math.round(w.currentLoad * 100) + '%"></span></span></span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.active_tasks') + '</span><span class="value">' + w.activeTasks + ' / ' + w.maxConcurrency + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.success_rate') + '</span><span class="value">' + (w.successRate !== undefined ? Math.round(w.successRate * 100) + '%' : '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.avg_latency') + '</span><span class="value">' + (w.avgLatencyMs !== undefined ? Math.round(w.avgLatencyMs) + 'ms' : '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.heartbeat') + '</span><span class="value">' + hbText + '</span></div>' +
+        '<div class="field field-header">' + t('workspace.info.capabilities') + '</div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.max_tokens') + '</span><span class="value">' + (w.maxTokens || '-') + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.traits') + '</span><span class="value" style="font-size:11px;">' + traits + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.boundaries') + '</span><span class="value" style="font-size:11px;">' + boundaries + '</span></div>' +
+        '<div class="field"><span class="label">' + t('workspace.info.workspace') + '</span><span class="value" style="font-size:11px;">' + (w.workspace || '-') + '</span></div>';
+}
+
+function renderRecentTasks(tasks) {
+    var tbody = document.getElementById('tasksBody');
+    if (!tasks || tasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>' + t('empty.no_tasks') + '</p></div></td></tr>';
+        return;
+    }
+    // Show last 20 tasks sorted by createdAt desc
+    var sorted = tasks.slice().sort(function(a, b) { return b.createdAt - a.createdAt; });
+    var html = '';
+    var count = 0;
+    sorted.forEach(function(t) {
+        if (count++ >= 20) return;
+        var statusBadge = 'badge-' + t.status.toLowerCase();
+        var time = new Date(t.createdAt).toLocaleTimeString();
+        html += '<tr>' +
+            '<td style="font-family:monospace;font-size:11px;">' + t.taskId.substring(0, 12) + '..</td>' +
+            '<td><span class="badge ' + statusBadge + '">' + t.status + '</span></td>' +
+            '<td>' + (t.workerId ? t.workerId.substring(0, 12) + '..' : '-') + '</td>' +
+            '<td>' + (t.currentStep || 0) + '</td>' +
+            '<td>' + (t.totalTokens || 0) + '</td>' +
+            '<td>' + time + '</td>' +
+            '<td>' + (t.status === 'PENDING' || t.status === 'IN_PROGRESS' ? '<button class="btn-danger" onclick="cancelTask(\'' + t.taskId + '\')">' + t('workspace.btn.cancel') + '</button>' : '') + '</td>' +
+            '</tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+// ========== Tasks Tab ==========
+function refreshTasks() {
+    var status = document.getElementById('taskFilterStatus').value;
+    var url = '/monitor/workspace/api/tasks';
+    if (status) url += '?status=' + status;
+    fetch(url, { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(tasks) {
+            if (!tasks) return;
+            var tbody = document.getElementById('allTasksBody');
+            if (!tasks || tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><p>' + t('empty.no_tasks') + '</p></div></td></tr>';
+                return;
+            }
+            var sorted = tasks.slice().sort(function(a, b) { return b.createdAt - a.createdAt; });
+            var html = '';
+            sorted.forEach(function(t) {
+                var statusBadge = 'badge-' + t.status.toLowerCase();
+                html += '<tr>' +
+                    '<td style="font-family:monospace;font-size:11px;">' + t.taskId.substring(0, 16) + '..</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + t.status + '</span></td>' +
+                    '<td>' + (t.workerId ? t.workerId.substring(0, 12) + '..' : '-') + '</td>' +
+                    '<td>' + (t.currentStep || 0) + '</td>' +
+                    '<td>' + (t.totalTokens || 0) + '</td>' +
+                    '<td>' + new Date(t.createdAt).toLocaleString() + '</td>' +
+                    '<td>' + new Date(t.updatedAt).toLocaleString() + '</td>' +
+                    '<td>' + (t.status === 'PENDING' || t.status === 'IN_PROGRESS' ? '<button class="btn-danger" onclick="cancelTask(\'' + t.taskId + '\')">' + t('workspace.btn.cancel') + '</button>' : '') + '</td>' +
+                    '</tr>';
+            });
+            tbody.innerHTML = html;
+        });
+}
+
+function cancelTask(taskId) {
+    if (!confirm(t('workspace.confirm_cancel') + ' ' + taskId.substring(0, 12) + '...?')) return;
+    fetch('/monitor/workspace/api/task/' + taskId + '/cancel', { method: 'POST', headers: authHeaders() })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.status === 'cancelled') {
+                loadTopology();
+            } else {
+                alert(t('workspace.cancel_failed'));
+            }
+        })
+        .catch(function(err) { alert(t('workspace.cancel_failed') + ': ' + err); });
+}
+
+// ========== Polling ==========
+loadI18n(function() {
+    applyI18n();
+    loadTopology();
+});
+setInterval(loadTopology, 10000);
+</script>
+</body>
+</html>

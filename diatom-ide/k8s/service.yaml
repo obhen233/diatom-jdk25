@@ -1,0 +1,18 @@
+# diatom-ide Service（ClusterIP）
+# 供 Ingress、HPA、Prometheus ServiceMonitor 路由到 Deployment。
+apiVersion: v1
+kind: Service
+metadata:
+  name: diatom-ide
+  namespace: default
+  labels:
+    app: diatom-ide
+spec:
+  type: ClusterIP
+  selector:
+    app: diatom-ide
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

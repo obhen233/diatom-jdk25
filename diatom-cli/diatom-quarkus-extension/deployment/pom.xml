@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.obhen233</groupId>
+        <artifactId>diatom-quarkus-extension</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>diatom-quarkus-extension-deployment</artifactId>
+
+    <name>Diatom Quarkus Extension Deployment</name>
+    <description>Diatom CLI - Quarkus build-time processor (@BuildStep wiring)</description>
+
+    <dependencies>
+        <!-- Runtime module classes needed at build time -->
+        <dependency>
+            <groupId>com.github.obhen233</groupId>
+            <artifactId>diatom-quarkus-extension-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Quarkus build-time processors -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-core-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx-http-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-jackson-deployment</artifactId>
+        </dependency>
+        <!-- IDE Terminal WebSocket build-time processor (Phase 4) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next-deployment</artifactId>
+        </dependency>
+        <!-- Cloud 注册中心 build-time processor (Phase 5: SmallRye Stork) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-stork-deployment</artifactId>
+        </dependency>
+    </dependencies>
+</project>

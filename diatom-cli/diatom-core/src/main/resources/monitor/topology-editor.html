@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diatom Topology Editor</title>
+<script src="jsplumb.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+}
+/* ===== Navbar ===== */
+.navbar {
+    background: rgba(30,41,59,0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+}
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.navbar-brand { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.navbar-brand span { color: #60a5fa; }
+.navbar-tabs { display: flex; gap: 4px; }
+.nav-tab {
+    padding: 8px 16px;
+    background: none; border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8; cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    transition: color 0.15s, border-color 0.15s;
+}
+.nav-tab:hover { color: #e2e8f0; }
+.nav-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+.navbar-right { display: flex; align-items: center; gap: 12px; }
+.lang-btn {
+    padding: 6px 12px;
+    background: rgba(96,165,250,0.12);
+    border: 1px solid rgba(96,165,250,0.25);
+    border-radius: 6px;
+    color: #60a5fa;
+    cursor: pointer;
+    font-size: 13px;
+}
+.lang-btn:hover { background: rgba(96,165,250,0.2); }
+
+/* ===== Definition Selector ===== */
+.def-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    margin: 8px 24px 0;
+    background: rgba(30,41,59,0.3);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px;
+}
+.def-bar select {
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; color: #e2e8f0; font-size: 13px;
+    outline: none; min-width: 200px;
+}
+.def-bar select option { background: #1e293b; color: #e2e8f0; }
+
+/* ===== Main Layout ===== */
+.main-layout {
+    display: flex;
+    gap: 12px;
+    padding: 12px 24px 24px;
+    min-height: calc(100vh - 56px - 60px);
+}
+.canvas-wrap {
+    flex: 1;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    min-height: 600px;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+#topologyCanvas {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+    position: relative;
+}
+.canvas-toolbar {
+    position: absolute; top: 10px; right: 10px; z-index: 10;
+    display: flex; gap: 6px;
+}
+.canvas-toolbar button {
+    padding: 6px 12px;
+    background: rgba(30,41,59,0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; color: #e2e8f0; cursor: pointer;
+    font-size: 12px; transition: background 0.15s;
+}
+.canvas-toolbar button:hover { background: rgba(51,65,85,0.8); }
+.canvas-empty {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    color: #475569; text-align: center;
+}
+.canvas-empty p { font-size: 14px; margin-top: 8px; }
+
+/* ===== Side Panel ===== */
+.side-panel {
+    width: 380px;
+    flex-shrink: 0;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    max-height: calc(100vh - 56px - 60px - 24px);
+}
+.panel-title {
+    font-size: 14px; font-weight: 600;
+    color: #94a3b8; margin-bottom: 12px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.panel-empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 300px; color: #64748b; font-size: 13px; text-align: center;
+}
+.panel-empty span { display: block; margin-top: 6px; font-size: 11px; color: #475569; }
+
+/* ===== Node Styles (jsPlumb) ===== */
+.topo-node {
+    position: absolute;
+    background: #0f172a;
+    border: 2px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-family: monospace;
+    color: #e2e8f0;
+    cursor: pointer;
+    min-width: 100px;
+    text-align: center;
+    z-index: 5;
+    user-select: none;
+}
+.topo-node:hover { border-color: #60a5fa; }
+.topo-node.selected { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.3); }
+.topo-node .node-label { font-weight: 600; font-size: 13px; }
+.topo-node .node-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+.topo-node.node-offline { border-style: dashed; border-color: #475569; }
+.topo-node.node-suspect { border-style: dashed; border-color: #eab308; }
+
+/* jsPlumb connector styles */
+.jtk-connector path { stroke: #94a3b8; stroke-width: 2; }
+.jtk-connector.jtk-hover path { stroke: #60a5fa; stroke-width: 3; }
+.jtk-endpoint { fill: #94a3b8; }
+.jtk-endpoint.jtk-hover { fill: #60a5fa; }
+.jtk-overlay { color: #64748b; font-size: 10px; }
+
+/* Edit mode draggable */
+.topo-node.draggable { cursor: grab; }
+.topo-node.draggable:active { cursor: grabbing; }
+
+/* ===== Side Panel Fields ===== */
+.field-group { margin-bottom: 12px; }
+.field-group .field-label {
+    font-size: 11px; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.field-row {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+}
+.field-row .field-key { color: #94a3b8; }
+.field-row .field-val { color: #e2e8f0; font-weight: 500; text-align: right; max-width: 220px; word-break: break-all; white-space: pre-wrap; }
+.section-divider {
+    font-size: 11px; color: #475569;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 10px 0 4px; border: none; font-weight: 600;
+}
+
+/* ===== Form Controls ===== */
+.inp {
+    width: 100%; padding: 7px 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; color: #e2e8f0;
+    font-size: 13px; outline: none;
+}
+.inp:focus { border-color: rgba(96,165,250,0.4); }
+textarea.inp {
+    min-height: 60px; resize: vertical;
+    font-family: monospace; font-size: 12px;
+    line-height: 1.5;
+}
+textarea.inp-lg { min-height: 180px; }
+select.inp {
+    appearance: auto; cursor: pointer;
+}
+.inp-hint { font-size: 11px; color: #64748b; margin-top: 2px; }
+.inp-row { display: flex; gap: 8px; align-items: center; }
+.inp-row .inp { flex: 1; }
+.inp-chk { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #94a3b8; cursor: pointer; }
+.inp-chk input[type="checkbox"] { accent-color: #60a5fa; }
+
+/* ===== Buttons ===== */
+.btn {
+    padding: 7px 16px;
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+.btn-secondary:hover { background: rgba(255,255,255,0.12); }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-danger { padding:4px 10px; font-size:11px; border-radius:4px; background: rgba(248,113,113,0.15); color: #fca5a5; border: 1px solid rgba(248,113,113,0.25); }
+.btn-danger:hover { background: rgba(248,113,113,0.25); }
+.btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 4px; }
+.btn-group { display: flex; gap: 8px; margin-top: 12px; }
+.btn-group .btn { flex: 1; }
+.btn-icon {
+    padding: 4px 8px; background: none; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; color: #94a3b8; cursor: pointer; font-size: 12px;
+}
+.btn-icon:hover { color: #e2e8f0; border-color: rgba(255,255,255,0.2); }
+
+/* ===== Section Header (consistent with dashboard/workspace) ===== */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px 12px 0 0;
+}
+.section-header .section-title { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+
+/* ===== Empty State (consistent with dashbaord/workspace) ===== */
+.empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+.empty-state p { font-size: 14px; }
+
+/* ===== History Panel ===== */
+.history-layout {
+    padding: 12px 24px 24px;
+    min-height: calc(100vh - 56px - 60px);
+}
+.history-body {
+    display: flex; gap: 12px;
+    margin-top: 12px;
+}
+.history-list {
+    width: 420px; flex-shrink: 0;
+}
+.history-list .table-wrap {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+.history-list table th { position: sticky; top: 0; z-index: 2; }
+.history-list table td { cursor: pointer; }
+.history-list table tr.active td { background: rgba(96,165,250,0.08); }
+.history-list table tr:hover td { background: rgba(255,255,255,0.03); }
+.history-list table tr.active:hover td { background: rgba(96,165,250,0.1); }
+.history-canvas {
+    flex: 1;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    position: relative; overflow: hidden;
+    min-height: 500px;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.history-canvas #historyCanvas {
+    width: 100%; height: 100%;
+    min-height: 500px; position: relative;
+}
+.hist-overlay {
+    position: absolute;
+    top: 12px; left: 12px;
+    background: rgba(15,23,42,0.85);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    z-index: 20;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+}
+.hist-overlay .ho-title { font-weight: 600; color: #e2e8f0; font-size: 13px; margin-bottom: 4px; }
+.hist-overlay .ho-row { display: flex; gap: 16px; font-size: 11px; }
+.hist-overlay .ho-row span { display: inline-flex; align-items: center; gap: 4px; }
+/* ===== Badges ===== */
+.badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px; font-weight: 600;
+}
+.badge-draft { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-published { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-active { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-superseded { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-online { background: rgba(34,197,94,0.15); color: #4ade80; }
+.badge-offline { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.badge-suspect { background: rgba(234,179,8,0.15); color: #facc15; }
+
+/* ===== History Modal ===== */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6); z-index: 998;
+}
+.modal {
+    position: fixed; top: 5%; left: 10%; right: 10%; bottom: 5%;
+    background: #1e293b; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; z-index: 999;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+}
+.modal-title { font-size: 16px; font-weight: 600; color: #e2e8f0; }
+.modal-close {
+    background: none; border: none; color: #64748b;
+    font-size: 24px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.modal-close:hover { color: #e2e8f0; }
+.modal-body {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 12px 20px 20px; overflow: hidden; min-height: 0;
+}
+.modal-list-wrap { flex-shrink: 0; margin-bottom: 12px; }
+.modal-preview-layout {
+    flex: 1; display: flex; gap: 12px; min-height: 0;
+}
+.modal-preview-canvas {
+    flex: 1;
+    background: rgba(15,23,42,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px; position: relative; overflow: hidden;
+    min-height: 280px;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+.modal-preview-detail {
+    width: 320px; flex-shrink: 0;
+    background: rgba(15,23,42,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px; padding: 14px;
+    overflow-y: auto;
+}
+/* ===== Toast ===== */
+.toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    padding: 12px 20px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    transform: translateY(120%); opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 400px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
+.toast-error { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: #fca5a5; }
+.toast-info { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; }
+
+/* ===== Misc ===== */
+.hidden { display: none !important; }
+.loading { text-align: center; padding: 40px; color: #64748b; font-size: 13px; }
+.loading::before {
+    content: ''; display: inline-block; width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.08); border-top-color: #60a5fa;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+    margin-right: 8px; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Loading Overlay ===== */
+.loading-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15,23,42,0.7);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 9998;
+    backdrop-filter: blur(2px);
+}
+.loading-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+.loading-text {
+    margin-top: 12px; font-size: 14px; color: #94a3b8;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-left">
+        <span class="navbar-brand"><span>Diatom</span> <span data-i18n="teditor.brand">Topology Editor</span></span>
+        <div class="navbar-tabs">
+            <button class="nav-tab active" data-tab="editor" onclick="switchNavTab('editor')" data-i18n="teditor.tab.editor">Editor</button>
+        </div>
+    </div>
+    <div class="navbar-right">
+        <a href="/monitor/" style="color:#94a3b8;font-size:13px;text-decoration:none;padding:4px 10px;" data-i18n="nav.dashboard">Dashboard</a>
+        <a href="/monitor/workspace/" style="color:#94a3b8;font-size:13px;text-decoration:none;padding:4px 10px;" data-i18n="nav.workspace">Workspace</a>
+        <button onclick="toggleLang()" class="lang-btn">EN/中</button>
+        <span style="color:#64748b;font-size:13px;font-family:monospace;" id="clock"></span>
+    </div>
+</nav>
+
+<!-- Definition Info Bar -->
+<div class="def-bar" id="defBar">
+    <span style="font-size:13px;color:#94a3b8;" data-i18n="teditor.def.label">Definition:</span>
+    <span id="defName" style="font-size:13px;color:#e2e8f0;font-weight:500;">--</span>
+    <span style="color:#64748b;font-size:12px;" id="defStatus"></span>
+    <span style="flex:1"></span>
+    <span style="font-size:11px;color:#475569;">Structure mirrors runtime topology | Edit node to configure capability</span>
+</div>
+
+<!-- Main Editor Layout -->
+<div class="main-layout" id="editorLayout">
+    <div class="canvas-wrap">
+        <div class="canvas-toolbar" id="canvasToolbar">
+            <span id="editActions">
+                <button onclick="newVersion()" title="New version" style="padding:6px 12px;background:rgba(250,204,21,0.15);border:1px solid rgba(250,204,21,0.3);border-radius:4px;color:#facc15;cursor:pointer;font-size:12px;margin-right:8px;" data-i18n="teditor.toolbar.new_version">+ New Version</button>
+                <span id="editorSaveBtn" style="display:none;">
+                    <button onclick="saveDraft()" title="Save draft" style="padding:6px 12px;background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);border-radius:4px;color:#60a5fa;cursor:pointer;font-size:12px;" data-i18n="teditor.toolbar.save">Save</button>
+                    <button onclick="publishDef()" title="Publish version" style="padding:6px 12px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:4px;color:#4ade80;cursor:pointer;font-size:12px;" data-i18n="teditor.toolbar.publish">Publish</button>
+                </span>
+                <button onclick="openHistoryModal()" title="Version history" style="padding:6px 12px;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:4px;color:#c084fc;cursor:pointer;font-size:12px;margin-left:4px;" data-i18n="teditor.toolbar.history">History</button>
+            </span>
+        </div>
+        <div class="canvas-empty" id="canvasEmpty">
+            <div style="font-size:32px;margin-bottom:8px;">⊞</div>
+            <p id="emptyMsg">No topology loaded. Switch to Edit mode to create one.</p>
+        </div>
+        <div id="topologyCanvas"></div>
+    </div>
+    <div class="side-panel" id="sidePanel">
+        <div class="panel-title" data-i18n="teditor.details">Details</div>
+        <div class="panel-empty" id="panelEmpty">
+            <span data-i18n="teditor.panel.empty">Click a node to view details</span>
+            <span style="display:block;margin-top:4px;font-size:11px;color:#475569;">View mode: runtime status | Edit mode: configure node</span>
+        </div>
+        <div id="panelContent"></div>
+    </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay hidden" id="historyModalOverlay" onclick="closeHistoryModal()"></div>
+<div class="modal hidden" id="historyModal">
+    <div class="modal-header">
+        <span class="modal-title" data-i18n="teditor.tab.history">History</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="closeHistoryModal()" class="modal-close">&times;</button>
+        </div>
+    </div>
+    <div class="modal-body">
+        <!-- Top: Version list -->
+        <div class="modal-list-wrap">
+            <div class="table-wrap" style="max-height:200px;overflow-y:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:60px;" data-i18n="teditor.history.version">Version</th>
+                            <th data-i18n="teditor.history.name">Name</th>
+                            <th style="width:70px;" data-i18n="teditor.history.status">Status</th>
+                            <th style="width:55px;" data-i18n="teditor.history.nodes">Nodes</th>
+                            <th style="width:55px;" data-i18n="teditor.history.edges">Edges</th>
+                            <th data-i18n="teditor.history.published">Published</th>
+                            <th style="width:90px;" data-i18n="teditor.history.actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="versionListBody">
+                        <tr><td colspan="7"><div class="empty-state"><p data-i18n="teditor.empty.history">Select a definition and version.</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Bottom: Preview (left canvas + right details) -->
+        <div class="modal-preview-layout">
+            <div class="modal-preview-canvas">
+                <div class="canvas-empty" id="histEmpty">
+                    <div style="font-size:28px;margin-bottom:6px;">◷</div>
+                    <p data-i18n="teditor.empty.history">Select a definition and version.</p>
+                </div>
+                <div id="historyCanvas" style="width:100%;height:100%;min-height:320px;position:relative;"></div>
+            </div>
+            <div class="modal-preview-detail" id="histDetailPanel">
+                <div class="panel-empty" id="histDetailEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:13px;text-align:center;">
+                    <span data-i18n="teditor.empty.history">Select a version to view details</span>
+                </div>
+                <div id="histDetailContent" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Loading...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== i18n =====
+var i18nData = {};
+var currentLang = localStorage.getItem('diatom_lang') || 'zh';
+
+function loadI18n(callback) {
+    fetch('/monitor/api/i18n?lang=' + currentLang)
+        .then(function(r) { return r.json(); })
+        .then(function(d) { i18nData = d; if (callback) callback(); })
+        .catch(function() { i18nData = {}; if (callback) callback(); });
+}
+function t(key) { return i18nData[key] || key; }
+function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('diatom_lang', currentLang);
+    loadI18n(function() {
+        applyI18n();
+        var historyModal = document.getElementById('historyModal');
+        if (historyModal && !historyModal.classList.contains('hidden')) {
+            loadAllHistory();
+        }
+        // Re-render side panel if a node is selected (using cached runtimeData)
+        if (selectedNodeId) {
+            onViewNodeClick(selectedNodeId);
+        }
+    });
+}
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+}
+
+// ===== Auth =====
+function getToken() { return localStorage.getItem('diatom_monitor_token'); }
+function authHeaders() {
+    var t = getToken();
+    return t ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+}
+function handleAuthError(resp) {
+    if (resp.status === 401) {
+        localStorage.removeItem('diatom_monitor_token');
+        window.location.href = '/monitor/login';
+        return true;
+    }
+    return false;
+}
+
+// ===== Loading =====
+function showLoading(msg) {
+    document.getElementById('loadingText').textContent = msg || 'Loading...';
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ===== Toast =====
+var toastTimer = null;
+function showToast(msg, type) {
+    type = type || 'info';
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast toast-' + type + ' show';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+// ===== Clock =====
+function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== Nav Tab Switching =====
+function switchNavTab(name) {
+    document.querySelectorAll('.nav-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.tab === name);
+    });
+    document.getElementById('editorLayout').classList.toggle('hidden', name !== 'editor');
+    if (name === 'editor') {
+        loadEditTopology();
+    }
+}
+
+// ======================================================================
+// STATE
+// ======================================================================
+var currentMode = 'edit';
+var plumb = null;
+var currentDefId = null;
+var currentDef = null; // TopologyDef object
+var isEditable = false; // true when current def is 'draft', false when 'published' or none
+var editDef = { nodes: [], edges: [] }; // parsed TopologyDefinition
+var selectedNodeId = null;
+var runtimeData = null;
+var viewInterval = null;
+
+// ======================================================================
+// jsPlumb INIT
+// ======================================================================
+function initPlumb(containerId) {
+    if (plumb) {
+        try { plumb.reset(); } catch(e) {}
+        plumb = null;
+    }
+    var cid = containerId || 'topologyCanvas';
+    plumb = jsPlumb.getInstance({
+        Container: cid,
+        Connector: ['Flowchart', { cornerRadius: 5 }],
+        Endpoint: ['Blank', { radius: 1 }],
+        PaintStyle: { stroke: '#475569', strokeWidth: 2 },
+        ConnectionOverlays: [
+            ['Arrow', { location: 0.5, width: 10, length: 12, foldback: 0.8 }]
+        ]
+    });
+    return plumb;
+}
+
+// ======================================================================
+// INITIAL LOAD
+// ======================================================================
+function loadEditorData() {
+    loadEditTopology();
+}
+
+// ======================================================================
+// VIEW MODE — Runtime Topology
+// ======================================================================
+function loadRuntimeTopology() {
+    fetch('/monitor/workspace/api/topology', { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            runtimeData = data;
+            renderRuntimeTopology(data);
+        })
+        .catch(function(err) {
+            console.error('Runtime topology error:', err);
+        });
+}
+
+function renderRuntimeTopology(data) {
+    if (currentMode !== 'view') return;
+    var canvas = document.getElementById('topologyCanvas');
+    // Save selected node before re-render
+    var prevSelected = selectedNodeId;
+    canvas.innerHTML = '';
+    document.getElementById('canvasEmpty').classList.add('hidden');
+    selectedNodeId = null;
+
+    initPlumb('topologyCanvas');
+
+    var workers = data.workers || [];
+    var connections = data.connections || [];
+    var gateways = data.gateways || [];
+    var legacySingleGateway = gateways.length === 0;
+    var canvasW = canvas.offsetWidth || 800;
+    var gwEl = null;
+
+    // Render Gateway node(s)
+    if (gateways.length > 0) {
+        // 注册中心直读模式：每个注册的 gateway 渲染为顶部一行的独立节点
+        var gwCount = gateways.length;
+        var gwStep = Math.min(220, Math.max(150, (canvasW - 100) / Math.max(gwCount, 1)));
+        var gwStartX = (canvasW - gwStep * (gwCount - 1)) / 2;
+        if (gwCount === 1) gwStartX = canvasW / 2;
+        gateways.forEach(function(g, i) {
+            var gNodeId = 'gateway:' + i;
+            var el = document.createElement('div');
+            el.id = 'node-' + gNodeId;
+            el.className = 'topo-node';
+            var label = (g.host || 'Gateway') + ':' + (g.port || '');
+            el.innerHTML = '<div class="node-label">' + label + '</div><div class="node-sub">' + (g.version || '-') + '</div>';
+            el.style.left = (gwStartX + gwStep * i - 60) + 'px';
+            el.style.top = '40px';
+            el.title = 'Gateway: ' + (g.id || '-') + ' | Workers: ' + (g.workerCount || 0);
+            el.addEventListener('click', (function(gid) {
+                return function(e) {
+                    e.stopPropagation();
+                    document.querySelectorAll('#topologyCanvas .topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+                    el.classList.add('selected');
+                    onViewNodeClick(gid);
+                };
+            })(gNodeId));
+            canvas.appendChild(el);
+        });
+    } else {
+        // 旧单 gateway 模式
+        var gw = data.gateway || {};
+        gwEl = document.createElement('div');
+        gwEl.id = 'node-gateway';
+        gwEl.className = 'topo-node';
+        gwEl.innerHTML = '<div class="node-label">Gateway</div><div class="node-sub">' + (gw.host || 'localhost') + ':' + (gw.port || '') + '</div>';
+        gwEl.style.left = Math.floor(canvasW / 2 - 60) + 'px';
+        gwEl.style.top = '40px';
+        gwEl.title = 'Gateway: ' + (gw.version || '-') + ' | Workers: ' + (gw.workerCount || 0);
+        gwEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('#topologyCanvas .topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+            gwEl.classList.add('selected');
+            onViewNodeClick('gateway');
+        });
+        canvas.appendChild(gwEl);
+    }
+
+    // Render Worker nodes
+    var yPos = 180;
+    var xStep = Math.min(180, Math.max(120, (canvasW - 100) / Math.max(workers.length, 1)));
+    var startX = (canvasW - xStep * (workers.length - 1)) / 2;
+    if (workers.length === 1) startX = canvasW / 2;
+
+    workers.forEach(function(w, i) {
+        var el = document.createElement('div');
+        el.id = 'node-' + w.workerId;
+        var cls = 'topo-node';
+        if (w.status === 'OFFLINE' || w.status === 'SHUTTING_DOWN') cls += ' node-offline';
+        else if (w.status === 'SUSPECT') cls += ' node-suspect';
+        el.className = cls;
+        var label = w.workerId;
+        if (label.length > 22) label = label.substring(0, 20) + '..';
+        el.innerHTML = '<div class="node-label">' + label + '</div><div class="node-sub">' + (w.model || '-') + ' | ' + Math.round(w.currentLoad * 100) + '%</div>';
+        el.style.left = (startX + xStep * i - 60) + 'px';
+        el.style.top = yPos + 'px';
+        el.title = w.workerId + '\nModel: ' + (w.model || '-') + '\nStatus: ' + w.status + '\nLoad: ' + Math.round(w.currentLoad * 100) + '%';
+        el.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('#topologyCanvas .topo-node.selected').forEach(function(n) { n.classList.remove('selected'); });
+            el.classList.add('selected');
+            onViewNodeClick(w.workerId);
+        });
+        canvas.appendChild(el);
+    });
+
+    // 直读模式（多 gateway）下 gateway 与 worker 无直连关系，不画连线
+    if (legacySingleGateway) {
+        // Connections
+        connections.forEach(function(c) {
+            var fromEl = document.getElementById('node-' + c.from);
+            var toEl = document.getElementById('node-' + c.to);
+            if (fromEl && toEl) {
+                try {
+                    plumb.connect({ source: fromEl.id, target: toEl.id, anchors: ['Bottom', 'Top'] });
+                } catch(e) {}
+            }
+        });
+
+        // Fallback: if no connections data, connect Gateway to all workers
+        if (connections.length === 0 && workers.length > 0) {
+            workers.forEach(function(w) {
+                var toEl = document.getElementById('node-' + w.workerId);
+                if (toEl) {
+                    try {
+                        plumb.connect({ source: gwEl.id, target: toEl.id, anchors: ['Bottom', 'Top'] });
+                    } catch(e) {}
+                }
+            });
+        }
+    }
+
+    // Restore previously selected node
+    if (prevSelected) {
+        var prevEl = document.getElementById('node-' + prevSelected);
+        if (prevEl) {
+            prevEl.classList.add('selected');
+            selectedNodeId = prevSelected;
+            onViewNodeClick(prevSelected);
+        }
+    }
+
+    // Repaint
+    setTimeout(function() { try { plumb.repaintEverything(); } catch(e) {} }, 150);
+}
+
+function onViewNodeClick(nodeId) {
+    var pc = document.getElementById('panelContent');
+    document.getElementById('panelEmpty').classList.add('hidden');
+    selectedNodeId = nodeId;
+
+    // Gateway
+    if (nodeId === 'gateway' || (nodeId && nodeId.indexOf('gateway:') === 0)) {
+        var gws = (runtimeData && runtimeData.gateways) || [];
+        var gw = (runtimeData && runtimeData.gateway) || {};
+        if (nodeId.indexOf('gateway:') === 0) {
+            var gIdx = parseInt(nodeId.substring('gateway:'.length), 10);
+            if (!isNaN(gIdx) && gIdx >= 0 && gIdx < gws.length) gw = gws[gIdx];
+        }
+        pc.innerHTML =
+            '<div class="field-group">' +
+            '  <div class="section-divider">Gateway</div>' +
+            '  <div class="field-row"><span class="field-key">ID</span><span class="field-val">' + (gw.id || 'gateway') + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('workspace.info.host') + '</span><span class="field-val">' + (gw.host || 'localhost') + ':' + (gw.port || '') + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('workspace.info.version') + '</span><span class="field-val">' + (gw.version || '-') + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('workspace.info.workers') + '</span><span class="field-val">' + (gw.workerCount || 0) + '</span></div>' +
+            '</div>';
+        return;
+    }
+
+    // Worker
+    var w = null;
+    var workers = (runtimeData && runtimeData.workers) || [];
+    for (var i = 0; i < workers.length; i++) {
+        if (workers[i].workerId === nodeId) { w = workers[i]; break; }
+    }
+    if (!w) return;
+
+    var statusBadge = 'badge-' + w.status.toLowerCase();
+    var hbText = w.heartbeatAge < 60000 ? t('workspace.info.just_now') : Math.round(w.heartbeatAge / 1000) + t('workspace.info.seconds_ago');
+    var loadPct = Math.round(w.currentLoad * 100);
+    var loadCls = w.currentLoad < 0.5 ? 'low' : (w.currentLoad < 0.8 ? 'med' : 'high');
+    var traits = w.traits && w.traits.length ? w.traits.join(', ') : '-';
+    var boundaries = w.boundaries && w.boundaries.length ? w.boundaries.join('; ') : 'none';
+
+    pc.innerHTML =
+        '<div class="field-group">' +
+        '  <div class="section-divider">' + w.workerId + '</div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.status') + '</span><span class="field-val"><span class="badge ' + statusBadge + '">' + w.status + '</span></span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.model') + '</span><span class="field-val">' + (w.model || '-') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.host') + '</span><span class="field-val">' + w.host + ':' + w.port + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.tier') + '</span><span class="field-val">' + (w.tier || 'worker') + '</span></div>' +
+        '  <div class="section-divider">' + t('workspace.info.metrics') + '</div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.load') + '</span><span class="field-val">' + loadPct + '%</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.active_tasks') + '</span><span class="field-val">' + w.activeTasks + ' / ' + w.maxConcurrency + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.success_rate') + '</span><span class="field-val">' + (w.successRate !== undefined ? Math.round(w.successRate * 100) + '%' : '-') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.avg_latency') + '</span><span class="field-val">' + (w.avgLatencyMs !== undefined ? Math.round(w.avgLatencyMs) + 'ms' : '-') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.heartbeat') + '</span><span class="field-val">' + hbText + '</span></div>' +
+        '  <div class="section-divider">' + t('workspace.info.capabilities') + '</div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.max_tokens') + '</span><span class="field-val">' + (w.maxTokens || '-') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.traits') + '</span><span class="field-val" style="font-size:11px;">' + traits + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.boundaries') + '</span><span class="field-val" style="font-size:11px;">' + boundaries + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('workspace.info.workspace') + '</span><span class="field-val" style="font-size:11px;">' + (w.workspace || '-') + '</span></div>' +
+        '</div>';
+}
+
+function startViewRefresh() {
+    stopViewRefresh();
+    viewInterval = setInterval(loadRuntimeTopology, 10000);
+}
+function stopViewRefresh() {
+    if (viewInterval) { clearInterval(viewInterval); viewInterval = null; }
+}
+
+// ======================================================================
+// EDIT MODE — Mirror runtime topology, edit capabilities only
+// ======================================================================
+function loadEditTopology() {
+    showLoading('Loading topology...');
+    Promise.all([
+        fetch('/monitor/workspace/api/topology', { headers: authHeaders() }).then(function(r) { return handleAuthError(r) ? null : r.json(); }),
+        fetch('/monitor/topology/api/definitions', { headers: authHeaders() }).then(function(r) { return handleAuthError(r) ? [] : r.json(); })
+    ])
+    .then(function(results) {
+        hideLoading();
+        var runtimeData = results[0];
+        var defs = results[1] || [];
+        if (!runtimeData) { return; }
+
+        // Save runtime data for side panel display
+        window._editRuntimeData = runtimeData;
+
+        // Build editDef from runtime topology + capability data from definition
+        editDef = buildEditDefFromRuntime(runtimeData, defs);
+        document.getElementById('defStatus').textContent = '';
+        renderEditTopology();
+    })
+    .catch(function(err) {
+        hideLoading();
+        console.error('Load edit topology error:', err);
+        showToast('Failed to load runtime topology', 'error');
+    });
+}
+
+function buildEditDefFromRuntime(runtime, defs) {
+    var result = { nodes: [], edges: [] };
+
+    // Find best matching definition for capability data
+    var defData = null;
+    if (defs && defs.length > 0) {
+        // Priority: draft → published → first
+        for (var i = 0; i < defs.length; i++) {
+            if (defs[i].status === 'draft') { defData = defs[i]; break; }
+        }
+        if (!defData) {
+            for (var i = 0; i < defs.length; i++) {
+                if (defs[i].status === 'published') { defData = defs[i]; break; }
+            }
+        }
+        if (!defData) defData = defs[0];
+    }
+
+    var defNodes = [];
+    if (defData && defData.draftDefinition) {
+        try { var dd = JSON.parse(defData.draftDefinition); defNodes = dd.nodes || []; } catch(e) {}
+    }
+
+    function findDefNode(id) {
+        for (var j = 0; j < defNodes.length; j++) {
+            if (defNodes[j].id === id) return defNodes[j];
+        }
+        return null;
+    }
+
+    // Update definition info bar
+    if (defData) {
+        document.getElementById('defName').textContent = defData.name || '--';
+        document.getElementById('defStatus').textContent = ' (v' + defData.version + ', ' + defData.status + ')';
+        currentDefId = defData.id;
+        currentDef = defData;
+        isEditable = (defData.status === 'draft');
+    } else {
+        document.getElementById('defName').textContent = 'No published definition';
+        document.getElementById('defStatus').textContent = '';
+        currentDefId = null;
+        currentDef = null;
+        isEditable = false;
+    }
+
+    // Gateway node(s)
+    var gateways = runtime.gateways || [];
+    if (gateways.length > 0) {
+        // 注册中心直读模式：每个注册的 gateway 一个节点
+        gateways.forEach(function(g, i) {
+            var gwId = g.id || ('gateway-' + i);
+            var gwDef = findDefNode(gwId);
+            result.nodes.push({
+                id: gwId,
+                type: 'gateway',
+                label: (g.host || 'Gateway') + ':' + (g.port || ''),
+                host: g.host || 'localhost',
+                port: g.port || '',
+                version: g.version || '',
+                workerCount: g.workerCount || 0,
+                gatewayPrompt: gwDef ? (gwDef.gatewayPrompt || gwDef.prompt || '') : '',
+                prompt: gwDef ? (gwDef.gatewayPrompt || gwDef.prompt || '') : ''
+            });
+        });
+    } else {
+        // 旧单 gateway 模式
+        var gw = runtime.gateway || {};
+        var gwId = 'gateway';
+        var gwDef = findDefNode(gwId);
+        result.nodes.push({
+            id: gwId,
+            type: 'gateway',
+            label: 'Gateway',
+            host: gw.host || 'localhost',
+            port: gw.port || '',
+            version: gw.version || '',
+            workerCount: gw.workerCount || 0,
+            gatewayPrompt: gwDef ? (gwDef.gatewayPrompt || gwDef.prompt || '') : '',
+            prompt: gwDef ? (gwDef.gatewayPrompt || gwDef.prompt || '') : ''
+        });
+    }
+
+    // Worker nodes
+    var workers = runtime.workers || [];
+    workers.forEach(function(w) {
+        var defNode = findDefNode(w.workerId);
+        result.nodes.push({
+            id: w.workerId,
+            type: 'worker',
+            label: w.workerId,
+            model: w.model || '',
+            tier: w.tier || 'worker',
+            status: w.status || 'ONLINE',
+            host: w.host || '',
+            port: w.port || 0,
+            supportsToolCalls: w.supportsToolCalls !== undefined ? w.supportsToolCalls : true,
+            supportsStreaming: w.supportsStreaming !== undefined ? w.supportsStreaming : true,
+            maxTokens: w.maxTokens || '',
+            capabilities: defNode ? (defNode.capabilities || {}) : (w.capabilities || {}),
+            taskTypes: defNode ? (defNode.taskTypes || []) : []
+        });
+    });
+
+    // Edges: from runtime connections or auto-create gateway→worker
+    var connections = runtime.connections || [];
+    if (connections.length > 0) {
+        connections.forEach(function(c) {
+            var from = c.from === 'gateway' ? 'gateway' : c.from;
+            var to = c.to;
+            var hasFrom = false, hasTo = false;
+            for (var i = 0; i < result.nodes.length; i++) {
+                if (result.nodes[i].id === from) hasFrom = true;
+                if (result.nodes[i].id === to) hasTo = true;
+            }
+            if (hasFrom && hasTo) {
+                result.edges.push({ id: 'edge-' + result.edges.length, from: from, to: to, rules: {} });
+            }
+        });
+    } else if (workers.length > 0 && gateways.length === 0) {
+        // 仅旧单 gateway 模式自动生成 gateway→worker 连线
+        var hasGateway = result.nodes.length > 0 && result.nodes[0].type === 'gateway';
+        workers.forEach(function(w) {
+            result.edges.push({ id: 'edge-' + result.edges.length, from: 'gateway', to: w.workerId, rules: {} });
+        });
+    }
+
+    return result;
+}
+
+// ===== Edit: Render Topology (mirror runtime) =====
+function renderEditTopology() {
+    if (currentMode !== 'edit') return;
+    var canvas = document.getElementById('topologyCanvas');
+    canvas.innerHTML = '';
+    document.getElementById('canvasEmpty').classList.add('hidden');
+    document.getElementById('panelContent').innerHTML = '';
+    document.getElementById('panelEmpty').classList.remove('hidden');
+    selectedNodeId = null;
+
+    initPlumb('topologyCanvas');
+
+    var canvasW = canvas.offsetWidth || 800;
+    var gateways = editDef.nodes.filter(function(n) { return n.type === 'gateway'; });
+    var workers = editDef.nodes.filter(function(n) { return n.type === 'worker'; });
+
+    // Render Gateway nodes
+    var gwStartX = canvasW / 2 - 60;
+    gateways.forEach(function(gw, i) {
+        var el = document.createElement('div');
+        el.id = gw.id;
+        el.className = 'topo-node';
+        el.innerHTML = '<div class="node-label">' + (gw.label || 'Gateway') + '</div><div class="node-sub">' + (gw.host || '-') + '</div>';
+        el.style.left = gwStartX + 'px';
+        el.style.top = '40px';
+        el.title = 'Gateway: ' + (gw.version || '-') + ' | Workers: ' + (gw.workerCount || 0);
+        el.addEventListener('click', function(e) { e.stopPropagation(); selectNode(gw.id); });
+        canvas.appendChild(el);
+    });
+
+    // Render Worker nodes
+    var yPos = 180;
+    var xStep = Math.min(180, Math.max(120, (canvasW - 100) / Math.max(workers.length, 1)));
+    var startX = (canvasW - xStep * (workers.length - 1)) / 2;
+    if (workers.length === 1) startX = canvasW / 2 - 60;
+
+    workers.forEach(function(w, i) {
+        var el = document.createElement('div');
+        el.id = w.id;
+        var cls = 'topo-node';
+        if (w.status === 'OFFLINE' || w.status === 'SHUTTING_DOWN') cls += ' node-offline';
+        else if (w.status === 'SUSPECT') cls += ' node-suspect';
+        el.className = cls;
+        var label = w.label || w.id;
+        if (label.length > 22) label = label.substring(0, 20) + '..';
+        el.innerHTML = '<div class="node-label">' + label + '</div><div class="node-sub">' + (w.model || 'Worker') + '</div>';
+        el.style.left = (startX + xStep * i - 60) + 'px';
+        el.style.top = yPos + 'px';
+        el.addEventListener('click', function(e) { e.stopPropagation(); selectNode(w.id); });
+        canvas.appendChild(el);
+    });
+
+    // Canvas click to deselect
+    canvas.addEventListener('click', function() { deselectNode(); });
+
+    // Register all nodes with jsPlumb so connect() can find them
+    gateways.forEach(function(gw) {
+        var nodeEl = document.getElementById(gw.id);
+        if (nodeEl) plumb.manage(nodeEl.id, nodeEl);
+    });
+    workers.forEach(function(w) {
+        var nodeEl = document.getElementById(w.id);
+        if (nodeEl) plumb.manage(nodeEl.id, nodeEl);
+    });
+
+    // Render edges
+    editDef.edges.forEach(function(e) {
+        connectNodes(e.from, e.to);
+    });
+
+    updateEditorState();
+    setTimeout(function() { try { plumb.repaintEverything(); } catch(ex) {} }, 100);
+}
+
+// ===== Edit: Side Panel =====
+function selectNode(nodeId) {
+    if (selectedNodeId === nodeId) return;
+    deselectNode();
+    selectedNodeId = nodeId;
+    var el = document.getElementById(nodeId);
+    if (el) el.classList.add('selected');
+    showNodePanel(nodeId);
+}
+
+function deselectNode() {
+    if (selectedNodeId) {
+        var old = document.getElementById(selectedNodeId);
+        if (old) old.classList.remove('selected');
+    }
+    selectedNodeId = null;
+    document.getElementById('panelContent').innerHTML = '';
+    document.getElementById('panelEmpty').classList.remove('hidden');
+}
+
+// ===== Edit: Side Panel =====
+function showNodePanel(nodeId) {
+    var node = null;
+    for (var i = 0; i < editDef.nodes.length; i++) {
+        if (editDef.nodes[i].id === nodeId) { node = editDef.nodes[i]; break; }
+    }
+    if (!node) return;
+
+    document.getElementById('panelEmpty').classList.add('hidden');
+    var pc = document.getElementById('panelContent');
+
+    if (node.type === 'gateway') {
+        showGatewayPanel(node, pc);
+    } else {
+        showWorkerPanel(node, pc);
+    }
+}
+
+function showGatewayPanel(node, pc) {
+    var prompt = node.gatewayPrompt || node.prompt || '';
+    // Check if this is a sub-gateway (has incoming edge from another gateway)
+    var isSubGateway = false;
+    for (var i = 0; i < editDef.edges.length; i++) {
+        if (editDef.edges[i].to === node.id) {
+            for (var j = 0; j < editDef.nodes.length; j++) {
+                if (editDef.nodes[j].id === editDef.edges[i].from && editDef.nodes[j].type === 'gateway') {
+                    isSubGateway = true; break;
+                }
+            }
+            if (isSubGateway) break;
+        }
+    }
+    var promptHtml;
+    if (isSubGateway) {
+        if (isEditable) {
+            promptHtml = '    <div class="field-label">' + t('teditor.panel.gateway_prompt') + '</div>' +
+              '    <textarea class="inp inp-lg" id="gwPrompt" onchange="updateGatewayPrompt(\'' + node.id + '\')">' + escapeHtml(prompt) + '</textarea>' +
+              '    <div class="inp-hint">' + t('teditor.panel.gateway_prompt_hint') + '</div>';
+        } else {
+            promptHtml = '    <div class="field-label">' + t('teditor.panel.gateway_prompt') + '</div>' +
+              '    <div style="background:rgba(0,0,0,0.2);padding:8px;border-radius:4px;font-size:12px;font-family:monospace;color:#94a3b8;word-break:break-all;">' + escapeHtml(prompt || '-') + '</div>';
+        }
+    } else {
+        promptHtml = '    <div class="inp-hint" style="color:#475569;">' + t('teditor.panel.gateway_top_hint') + '</div>';
+    }
+    pc.innerHTML =
+        '<div class="field-group">' +
+        '  <div class="section-divider">' + t('teditor.panel.gateway_label') + ' ' + (node.label || node.id) + '</div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.id') + '</span><span class="field-val">' + node.id + '</span></div>' +
+        '  <div class="field-group" style="margin-top:12px;">' +
+        promptHtml +
+        '  </div>' +
+        '</div>' +
+        (isEditable ? '<div class="btn-group"><button class="btn btn-primary btn-sm" onclick="saveDraft()">' + t('teditor.panel.save') + '</button></div>' : '');
+}
+
+function showWorkerPanel(node, pc) {
+    var cap = node.capabilities || {};
+    var traits = node.traits || [];
+    var boundaries = node.boundaries || [];
+    var taskTypes = node.taskTypes || [];
+
+    if (!isEditable) {
+        // Read-only view — show all data as plain text
+        var taskTypesStr = (Array.isArray(taskTypes) && taskTypes.length > 0) ? taskTypes.join(', ') : '-';
+        var strengthsStr = cap.strengths || '-';
+        var boundariesStr = cap.boundaries || '-';
+        var complexTask = cap.complexTask === true || cap.complexTask === 'true' ? t('teditor.panel.yes') : t('teditor.panel.no');
+        pc.innerHTML =
+            '<div class="field-group">' +
+            '  <div class="section-divider">' + t('teditor.panel.worker_id') + ': ' + (node.label || node.id) + ' <span style="font-size:11px;color:#64748b;font-weight:400;">(read-only)</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.worker_id') + '</span><span class="field-val">' + node.id + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.model') + '</span><span class="field-val">' + (node.model || '-') + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.tier') + '</span><span class="field-val">' + (node.tier || 'worker') + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.tool_calls') + '</span><span class="field-val">' + (node.supportsToolCalls ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.streaming') + '</span><span class="field-val">' + (node.supportsStreaming ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>' +
+            '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.strengths') + '</div>' +
+            '  <div style="font-size:12px;color:#94a3b8;padding:4px 0;word-wrap:break-word;white-space:pre-wrap;max-height:200px;overflow-y:auto;">' + escapeHtml(strengthsStr) + '</div>' +
+            '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.boundaries') + '</div>' +
+            '  <div style="font-size:12px;color:#94a3b8;padding:4px 0;word-wrap:break-word;white-space:pre-wrap;max-height:200px;overflow-y:auto;">' + escapeHtml(boundariesStr) + '</div>' +
+            '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.task_types') + '</div>' +
+            '  <div style="font-size:12px;color:#94a3b8;padding:4px 0;">' + escapeHtml(taskTypesStr) + '</div>' +
+            '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.complex_task') + '</div>' +
+            '  <div class="field-row"><span class="field-key">' + t('teditor.panel.handle_complex') + '</span><span class="field-val">' + complexTask + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">Max steps</span><span class="field-val">' + (cap.maxSteps || 50) + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">Token budget</span><span class="field-val">' + (cap.tokenBudget || 128000) + '</span></div>' +
+            '  <div class="field-row"><span class="field-key">Max output</span><span class="field-val">' + (cap.maxOutput || 32768) + '</span></div>' +
+            '</div>' +
+            '<div class="btn-group" style="margin-top:8px;">' +
+            '  <button class="btn btn-primary btn-sm" onclick="newVersion()" style="background:rgba(250,204,21,0.15);border-color:rgba(250,204,21,0.3);color:#facc15;">' + t('teditor.panel.new_version_btn') + '</button>' +
+            '</div>';
+        return;
+    }
+
+    // Editable view
+    var startupHint = '';
+    if (node._fromStartup) {
+        startupHint = '<div class="inp-hint" style="color:#eab308;">' + t('teditor.panel.startup_hint') + '</div>';
+    }
+
+    var taskTypeHtml = '';
+    var allTaskTypes = ['data_analysis', 'data_pipeline', 'reporting', 'code_generation', 'web_scraping', 'reasoning', 'classification', 'summarization', 'translation', 'qa'];
+    taskTypes.forEach(function(tt) {
+        if (allTaskTypes.indexOf(tt) === -1) allTaskTypes.push(tt);
+    });
+    allTaskTypes.forEach(function(tt) {
+        var checked = taskTypes.indexOf(tt) !== -1 ? 'checked' : '';
+        taskTypeHtml += '<label class="inp-chk"><input type="checkbox" ' + checked + ' onchange="updateWorkerTaskType(\'' + node.id + '\',\'' + tt + '\',this.checked)"> ' + tt + '</label>';
+    });
+
+    pc.innerHTML =
+        '<div class="field-group">' +
+        '  <div class="section-divider">' + t('teditor.panel.worker_id') + ': ' + (node.label || node.id) + ' <span style="font-size:11px;color:#22c55e;font-weight:400;">(editable)</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.worker_id') + '</span><span class="field-val">' + node.id + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.model') + '</span><span class="field-val">' + (node.model || '-') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.tier') + '</span><span class="field-val">' + (node.tier || 'worker') + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.tool_calls') + '</span><span class="field-val">' + (node.supportsToolCalls ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>' +
+        '  <div class="field-row"><span class="field-key">' + t('teditor.panel.streaming') + '</span><span class="field-val">' + (node.supportsStreaming ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>' +
+        startupHint +
+        '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.strengths') + '</div>' +
+        '  <textarea class="inp" onchange="updateWorkerField(\'' + node.id + '\',\'strengths\',this.value)" style="width:100%;min-height:80px;resize:vertical;word-wrap:break-word;white-space:pre-wrap;">' + escapeHtml((cap.strengths || '')) + '</textarea>' +
+        '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.boundaries') + '</div>' +
+        '  <textarea class="inp" onchange="updateWorkerField(\'' + node.id + '\',\'boundaries\',this.value)" style="width:100%;min-height:80px;resize:vertical;word-wrap:break-word;white-space:pre-wrap;">' + escapeHtml((cap.boundaries || '')) + '</textarea>' +
+        '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.task_types') + '</div>' +
+        taskTypeHtml +
+        '  <div class="section-divider" style="margin-top:10px;">' + t('teditor.panel.complex_task') + '</div>' +
+        '  <div class="inp-row">' +
+        '    <span style="font-size:12px;color:#94a3b8;white-space:nowrap;">' + t('teditor.panel.handle_complex') + '</span>' +
+        '    <select class="inp" onchange="updateWorkerField(\'' + node.id + '\',\'complexTask\',this.value)">' +
+        '      <option value="true"' + (cap.complexTask === true || cap.complexTask === 'true' ? ' selected' : '') + '>' + t('teditor.panel.yes') + '</option>' +
+        '      <option value="false"' + (cap.complexTask === false || cap.complexTask === 'false' ? ' selected' : '') + '>' + t('teditor.panel.no') + '</option>' +
+        '    </select>' +
+        '  </div>' +
+        '  <div class="inp-row" style="margin-top:6px;">' +
+        '    <span style="font-size:12px;color:#94a3b8;white-space:nowrap;">Max steps:</span>' +
+        '    <input class="inp" type="number" value="' + (cap.maxSteps || 50) + '" onchange="updateWorkerField(\'' + node.id + '\',\'maxSteps\',this.value)" style="width:80px;">' +
+        '    <span style="font-size:12px;color:#94a3b8;white-space:nowrap;">Token budget:</span>' +
+        '    <input class="inp" type="number" value="' + (cap.tokenBudget || 128000) + '" onchange="updateWorkerField(\'' + node.id + '\',\'tokenBudget\',this.value)" style="width:100px;">' +
+        '  </div>' +
+        '  <div class="inp-row" style="margin-top:6px;">' +
+        '    <span style="font-size:12px;color:#94a3b8;white-space:nowrap;">Max output:</span>' +
+        '    <input class="inp" type="number" value="' + (cap.maxOutput || 32768) + '" onchange="updateWorkerField(\'' + node.id + '\',\'maxOutput\',this.value)" style="width:100px;">' +
+        '  </div>' +
+        '</div>' +
+        '<div class="btn-group">' +
+        '  <button class="btn btn-primary btn-sm" onclick="saveDraft()">' + t('teditor.panel.save') + '</button>' +
+        '</div>';
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== Edit: Node Updates =====
+function updateGatewayPrompt(nodeId) {
+    var val = document.getElementById('gwPrompt');
+    if (!val) return;
+    for (var i = 0; i < editDef.nodes.length; i++) {
+        if (editDef.nodes[i].id === nodeId) {
+            editDef.nodes[i].gatewayPrompt = val.value;
+            editDef.nodes[i].prompt = val.value;
+            break;
+        }
+    }
+}
+
+function updateWorkerField(nodeId, field, val) {
+    for (var i = 0; i < editDef.nodes.length; i++) {
+        if (editDef.nodes[i].id === nodeId) {
+            if (!editDef.nodes[i].capabilities) editDef.nodes[i].capabilities = {};
+            editDef.nodes[i].capabilities[field] = val;
+            break;
+        }
+    }
+}
+
+function updateWorkerTaskType(nodeId, tt, checked) {
+    for (var i = 0; i < editDef.nodes.length; i++) {
+        if (editDef.nodes[i].id === nodeId) {
+            if (!editDef.nodes[i].taskTypes) editDef.nodes[i].taskTypes = [];
+            if (checked) {
+                if (editDef.nodes[i].taskTypes.indexOf(tt) === -1) editDef.nodes[i].taskTypes.push(tt);
+            } else {
+                var idx = editDef.nodes[i].taskTypes.indexOf(tt);
+                if (idx !== -1) editDef.nodes[i].taskTypes.splice(idx, 1);
+            }
+            break;
+        }
+    }
+}
+
+// ===== Edit: Connect nodes for rendering =====
+function connectNodes(fromId, toId) {
+    try {
+        var fromEl = document.getElementById(fromId);
+        var toEl = document.getElementById(toId);
+        if (fromEl && toEl) {
+            plumb.connect({
+                source: fromId,
+                target: toId,
+                anchors: ['Bottom', 'Top']
+            });
+        }
+    } catch(e) {
+        console.warn('Connect error:', fromId, '→', toId, e);
+    }
+}
+
+// ===== Edit: Save / Publish =====
+function saveDraft() {
+    if (!currentDefId) {
+        // Auto-create a draft definition
+        showLoading('Creating draft...');
+        var defName = 'Topology-' + new Date().toISOString().slice(0, 10);
+        fetch('/monitor/topology/api/definitions', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ name: defName, draftDefinition: JSON.stringify(editDef) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(def) {
+            if (!def) return;
+            currentDefId = def.id;
+            currentDef = def;
+            isEditable = true;
+            document.getElementById('defName').textContent = def.name;
+            document.getElementById('defStatus').textContent = ' (v' + def.version + ', ' + def.status + ')';
+            updateEditorState();
+            hideLoading();
+            showToast('Draft created and saved', 'success');
+        })
+        .catch(function(err) {
+            hideLoading();
+            showToast('Create draft failed: ' + err.message, 'error');
+        });
+        return;
+    }
+    showLoading('Saving draft...');
+    var body = JSON.stringify({
+        name: currentDef.name,
+        description: currentDef.description || '',
+        draftDefinition: JSON.stringify(editDef)
+    });
+
+    fetch('/monitor/topology/api/definitions/' + currentDefId, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: body
+    })
+    .then(function(r) {
+        hideLoading();
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(def) {
+        if (!def) return;
+        currentDef = def;
+        isEditable = true;
+        document.getElementById('defStatus').textContent = ' (v' + def.version + ', ' + def.status + ')';
+        updateEditorState();
+        showToast('Draft saved', 'success');
+    })
+    .catch(function(err) {
+        hideLoading();
+        showToast('Save failed: ' + err.message, 'error');
+    });
+}
+
+function publishDef() {
+    if (!currentDefId) {
+        // Create a new definition from current topology
+        showLoading('Creating definition...');
+        var defName = 'Topology-' + new Date().toISOString().slice(0, 10);
+        fetch('/monitor/topology/api/definitions', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ name: defName, draftDefinition: JSON.stringify(editDef) })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(def) {
+            if (!def) return;
+            currentDefId = def.id;
+            currentDef = def;
+            document.getElementById('defName').textContent = def.name;
+            document.getElementById('defStatus').textContent = ' (v' + def.version + ', ' + def.status + ')';
+            // Now publish
+            return fetch('/monitor/topology/api/definitions/' + def.id + '/publish', {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({ definition: JSON.stringify(editDef) })
+            });
+        })
+        .then(function(r) {
+            hideLoading();
+            if (!r) return;
+            return r.json();
+        })
+        .then(function(def) {
+            if (!def) return;
+            currentDef = def;
+            isEditable = false;
+            document.getElementById('defStatus').textContent = ' (v' + def.version + ', ' + def.status + ')';
+            updateEditorState();
+            showToast('Published as version ' + def.version, 'success');
+        })
+        .catch(function(err) {
+            hideLoading();
+            showToast('Publish failed: ' + err.message, 'error');
+        });
+        return;
+    }
+
+    if (!confirm('Publish current topology? This will create a new version.')) return;
+    showLoading('Publishing...');
+    fetch('/monitor/topology/api/definitions/' + currentDefId + '/publish', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ definition: JSON.stringify(editDef) })
+    })
+    .then(function(r) {
+        hideLoading();
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(def) {
+        if (!def) return;
+        currentDef = def;
+        isEditable = false;
+        document.getElementById('defStatus').textContent = ' (v' + def.version + ', ' + def.status + ')';
+        updateEditorState();
+        // Re-render side panel if a node is selected — show read-only view
+        if (selectedNodeId) {
+            var node = null;
+            for (var i = 0; i < editDef.nodes.length; i++) {
+                if (editDef.nodes[i].id === selectedNodeId) { node = editDef.nodes[i]; break; }
+            }
+            if (node) {
+                var pc = document.getElementById('panelContent');
+                document.getElementById('panelEmpty').classList.add('hidden');
+                if (node.type === 'gateway') showGatewayPanel(node, pc);
+                else showWorkerPanel(node, pc);
+            }
+        }
+        showToast('Published as version ' + def.version, 'success');
+    })
+    .catch(function(err) {
+        hideLoading();
+        showToast('Publish failed: ' + err.message, 'error');
+    });
+}
+
+// ===== New Version =====
+function newVersion() {
+    fetch('/monitor/topology/api/definitions', { headers: authHeaders() })
+        .then(function(r) { return handleAuthError(r) ? [] : r.json(); })
+        .then(function(defs) {
+            // Check if any draft definition already exists
+            var hasDraft = false;
+            for (var i = 0; i < defs.length; i++) {
+                if (defs[i].status === 'draft') { hasDraft = true; break; }
+            }
+            if (hasDraft) {
+                showToast(t('teditor.new_version.draft_exists'), 'error');
+                return;
+            }
+
+            // No draft exists — create a new draft from latest runtime topology
+            showLoading(t('teditor.new_version.creating'));
+            fetch('/monitor/workspace/api/topology', { headers: authHeaders() })
+                .then(function(r) { return handleAuthError(r) ? null : r.json(); })
+                .then(function(runtime) {
+                    if (!runtime) { hideLoading(); return; }
+                    // Build a clean editDef from runtime (no capability data from any def)
+                    var cleanDef = buildEditDefFromRuntime(runtime, []);
+                    var defName = 'Topology-' + new Date().toISOString().slice(0, 10);
+                    return fetch('/monitor/topology/api/definitions', {
+                        method: 'POST',
+                        headers: authHeaders(),
+                        body: JSON.stringify({ name: defName, draftDefinition: JSON.stringify(cleanDef) })
+                    }).then(function(r) { return r.json(); });
+                })
+                .then(function(def) {
+                    hideLoading();
+                    if (!def) return;
+                    // Reload editor with the new draft
+                    currentDefId = def.id;
+                    currentDef = def;
+                    isEditable = true;
+                    loadEditTopology();
+                    showToast(t('teditor.new_version.created'), 'success');
+                })
+                .catch(function(err) {
+                    hideLoading();
+                    showToast(t('teditor.new_version.failed').replace('{0}', err.message), 'error');
+                });
+        })
+        .catch(function(err) {
+            showToast(t('teditor.new_version.check_failed').replace('{0}', err.message), 'error');
+        });
+}
+
+// ===== Editor UI State =====
+function updateEditorState() {
+    var showEdit = isEditable && currentDefId;
+    document.getElementById('editorSaveBtn').style.display = showEdit ? 'inline' : 'none';
+    // Update the hint text in panelEmpty
+    var panelEmpty = document.getElementById('panelEmpty');
+    if (panelEmpty) {
+        var hint = panelEmpty.querySelector('span:last-child');
+        if (hint) {
+            hint.textContent = isEditable ? 'Edit mode: click a node to configure capabilities' : 'View mode: published topology (read-only)';
+        }
+    }
+}
+// HISTORY MODAL
+// ======================================================================
+function openHistoryModal() {
+    document.getElementById('historyModalOverlay').classList.remove('hidden');
+    document.getElementById('historyModal').classList.remove('hidden');
+    loadAllHistory();
+}
+function closeHistoryModal() {
+    document.getElementById('historyModalOverlay').classList.add('hidden');
+    document.getElementById('historyModal').classList.add('hidden');
+    // Destroy jsPlumb to prevent memory leaks
+    if (histPlumb) {
+        try { histPlumb.reset(); } catch(e) {}
+        histPlumb = null;
+    }
+}
+function renderHistoryDetail(row) {
+    var panel = document.getElementById('histDetailContent');
+    var empty = document.getElementById('histDetailEmpty');
+    if (!row) {
+        panel.style.display = 'none';
+        empty.style.display = 'flex';
+        return;
+    }
+    empty.style.display = 'none';
+    panel.style.display = 'block';
+    var version = row.dataset.version;
+    var status = row.dataset.status;
+    var published = row.dataset.published ? new Date(parseInt(row.dataset.published)).toLocaleString() : '-';
+    var defId = row.dataset.defid || '';
+    var loadCls = status === 'active' ? 'badge-active' : 'badge-superseded';
+
+    // Parse definition to show node capabilities
+    var defStr = row.dataset.definition;
+    var def;
+    try { def = JSON.parse(defStr); } catch(e) { def = null; }
+    var nodes = (def && def.nodes) || [];
+
+    var html = '';
+    html += '<div class="section-divider">' + t('teditor.history.version') + ' v' + version + ' <span class="badge ' + loadCls + '">' + status + '</span></div>';
+    html += '<div class="field-row"><span class="field-key">' + t('teditor.history.published') + '</span><span class="field-val">' + published + '</span></div>';
+
+    // Show each node's capability details
+    nodes.forEach(function(n) {
+        var isGateway = n.type === 'gateway';
+        html += '<div class="section-divider" style="margin-top:12px;">' + (n.label || n.id) + ' (' + (isGateway ? 'Gateway' : 'Worker') + ')</div>';
+
+        if (isGateway) {
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.gateway_label') + ' ' + t('teditor.panel.id') + '</span><span class="field-val">' + escapeHtml(n.id || '') + '</span></div>';
+            if (n.gatewayPrompt) {
+                html += '<div class="field-row" style="flex-direction:column;align-items:flex-start;"><span class="field-key">' + t('teditor.panel.gateway_prompt') + '</span><span class="field-val" style="text-align:left;width:100%;font-size:11px;word-break:break-all;margin-top:4px;background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-family:monospace;">' + escapeHtml(n.gatewayPrompt) + '</span></div>';
+            } else {
+                html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.gateway_prompt') + '</span><span class="field-val" style="color:#64748b;">' + t('teditor.panel.gateway_top_hint') + '</span></div>';
+            }
+        } else {
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.worker_id') + '</span><span class="field-val">' + escapeHtml(n.id || '') + '</span></div>';
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.model') + '</span><span class="field-val">' + escapeHtml(n.model || '-') + '</span></div>';
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.tier') + '</span><span class="field-val">' + escapeHtml(n.tier || 'worker') + '</span></div>';
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.tool_calls') + '</span><span class="field-val">' + (n.supportsToolCalls ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>';
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.streaming') + '</span><span class="field-val">' + (n.supportsStreaming ? t('teditor.panel.yes') : t('teditor.panel.no')) + '</span></div>';
+            html += '<div class="field-row"><span class="field-key">' + t('workspace.info.max_tokens') + '</span><span class="field-val">' + (n.maxTokens || '-') + '</span></div>';
+
+            // Strengths
+            var caps = n.capabilities || {};
+            var strengths = caps.strengths || n.strengths || [];
+            var strengthsStr = Array.isArray(strengths) ? strengths.join(', ') : (strengths || '-');
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.strengths') + '</span><span class="field-val" style="font-size:11px;">' + escapeHtml(strengthsStr) + '</span></div>';
+
+            // Boundaries
+            var boundaries = caps.boundaries || n.boundaries || [];
+            var boundsStr = Array.isArray(boundaries) ? boundaries.join('; ') : (boundaries || '-');
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.boundaries') + '</span><span class="field-val" style="font-size:11px;">' + escapeHtml(boundsStr) + '</span></div>';
+
+            // Task types
+            var taskTypes = n.taskTypes || [];
+            var ttStr = Array.isArray(taskTypes) ? taskTypes.join(', ') : (taskTypes || '-');
+            html += '<div class="field-row"><span class="field-key">' + t('teditor.panel.task_types') + '</span><span class="field-val" style="font-size:11px;">' + escapeHtml(ttStr) + '</span></div>';
+        }
+    });
+
+    html += '<div class="btn-group" style="margin-top:16px;">' +
+        '  <button class="btn btn-primary btn-sm" onclick="rollbackVersion(' + defId + ',' + version + ');closeHistoryModal();" style="width:100%;">' + t('teditor.history.rollback') + '</button>' +
+        '</div>';
+    panel.innerHTML = html;
+}
+
+function loadAllHistory() {
+    fetch('/monitor/topology/api/history', { headers: authHeaders() })
+        .then(function(r) {
+            if (handleAuthError(r)) return [];
+            return r.json();
+        })
+        .then(function(entries) {
+            var tbody = document.getElementById('versionListBody');
+            if (!entries || entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>' + t('teditor.empty.history') + '</p></div></td></tr>';
+                return;
+            }
+            var html = '';
+            entries.forEach(function(entry) {
+                var versionLabel = entry.type === 'draft' ? t('teditor.history.draft') : ('v' + entry.version);
+                var statusCls = 'badge-' + (entry.status === 'active' ? 'active' : (entry.status === 'draft' ? 'draft' : 'superseded'));
+                var date = entry.publishedAt ? new Date(entry.publishedAt).toLocaleString() : '-';
+                var nodeCount = '-', edgeCount = '-', defStr = '{"nodes":[],"edges":[]}';
+                try {
+                    var rawDef = entry.definition;
+                    var dd = typeof rawDef === 'string' ? JSON.parse(rawDef) : rawDef;
+                    defStr = typeof rawDef === 'string' ? rawDef : JSON.stringify(rawDef);
+                    if (dd && dd.nodes) nodeCount = dd.nodes.length;
+                    if (dd && dd.edges) edgeCount = dd.edges.length;
+                } catch(e) {}
+
+                var actionsHtml = '';
+                if (entry.type === 'draft') {
+                    actionsHtml = '<button class="btn-danger" onclick="event.stopPropagation();deleteDraftDef(' + entry.defId + ')">' + t('teditor.history.delete') + '</button>';
+                } else if (entry.status === 'active') {
+                    actionsHtml = '<button class="btn-action" onclick="event.stopPropagation();rollbackVersion(' + entry.defId + ',' + entry.version + ');closeHistoryModal();">' + t('teditor.history.rollback') + '</button>';
+                } else {
+                    actionsHtml = '<button class="btn-danger" onclick="event.stopPropagation();deleteVersion(' + entry.defId + ',' + entry.version + ')">' + t('teditor.history.delete') + '</button>';
+                }
+
+                html += '<tr class="history-row" data-version="' + entry.version + '" data-definition=\'' + escapeHtml(defStr) + '\' onclick="selectHistoryRow(this)" data-defid="' + entry.defId + '" data-status="' + entry.status + '" data-published="' + (entry.publishedAt || '') + '" data-nodecount="' + nodeCount + '" data-edgecount="' + edgeCount + '">' +
+                    '<td style="font-family:monospace;font-weight:600;">' + versionLabel + '</td>' +
+                    '<td style="font-size:12px;">' + escapeHtml(entry.defName || '') + '</td>' +
+                    '<td><span class="badge ' + statusCls + '">' + entry.status + '</span></td>' +
+                    '<td>' + nodeCount + '</td>' +
+                    '<td>' + edgeCount + '</td>' +
+                    '<td style="font-size:11px;color:#64748b;">' + date + '</td>' +
+                    '<td style="white-space:nowrap;">' + actionsHtml + '</td>' +
+                    '</tr>';
+            });
+            tbody.innerHTML = html;
+            // Highlight first row
+            var first = tbody.querySelector('.history-row');
+            if (first) {
+                first.classList.add('active');
+            }
+        })
+        .catch(function(err) { console.error('Load history error:', err); });
+}
+
+function selectHistoryRow(row) {
+    document.querySelectorAll('.history-row').forEach(function(r) { r.classList.remove('active'); });
+    row.classList.add('active');
+    var vLabel = row.dataset.version ? 'v' + row.dataset.version : '';
+    renderHistoryPreview(row.dataset.definition, vLabel);
+    renderHistoryDetail(row);
+}
+
+var histPlumb = null; // singleton for history canvas
+
+function renderHistoryPreview(defStr, versionLabel) {
+    var canvas = document.getElementById('historyCanvas');
+    canvas.innerHTML = '';
+    document.getElementById('histEmpty').classList.add('hidden');
+    // Add overlay showing version info
+    if (versionLabel) {
+        var overlay = document.createElement('div');
+        overlay.className = 'hist-overlay';
+        overlay.innerHTML = '<div class="ho-title">' + t('teditor.history.preview') + ' ' + versionLabel + '</div>';
+        canvas.appendChild(overlay);
+    }
+
+    // Destroy previous jsPlumb instance to prevent memory leak
+    if (histPlumb) {
+        try { histPlumb.reset(); } catch(e) {}
+        histPlumb = null;
+    }
+
+    if (!defStr) { defStr = '{"nodes":[],"edges":[]}'; }
+    var def;
+    try {
+        def = typeof defStr === 'string' ? JSON.parse(defStr) : defStr;
+    } catch(e) {
+        console.warn('Failed to parse history definition:', e);
+        def = { nodes: [], edges: [] };
+    }
+    if (!def.nodes) def.nodes = [];
+    if (!def.edges) def.edges = [];
+
+    histPlumb = jsPlumb.getInstance({
+        Container: 'historyCanvas',
+        Connector: ['Flowchart', { stub: 20, midpoint: 0.5 }],
+        Endpoint: ['Blank', { radius: 1 }],
+        PaintStyle: { stroke: '#475569', strokeWidth: 2 },
+        ConnectionOverlays: [
+            ['Arrow', { location: 1, width: 10, length: 12, foldback: 0.8 }]
+        ]
+    });
+
+    // Auto-layout: gateway top-center, workers below in centered single row
+    var gwNodes = [], workerNodes = [];
+    def.nodes.forEach(function(n) {
+        if (n.type === 'gateway') gwNodes.push(n); else workerNodes.push(n);
+    });
+    var cw = canvas.offsetWidth || 600;
+
+    def.nodes.forEach(function(n) {
+        var el = document.createElement('div');
+        el.id = 'hist-' + n.id;
+        el.className = 'topo-node';
+        if (n.type === 'gateway') {
+            el.style.left = Math.floor(cw / 2 - 60) + 'px';
+            el.style.top = '30px';
+        } else {
+            var idx = workerNodes.indexOf(n);
+            var wCount = workerNodes.length;
+            var xStep = Math.min(240, Math.max(150, (cw - 80) / Math.max(wCount, 1)));
+            var totalW = xStep * (wCount - 1);
+            var startX = Math.floor((cw - totalW) / 2 - 60);
+            el.style.left = Math.round(startX + xStep * idx) + 'px';
+            el.style.top = '170px';
+        }
+        el.style.cursor = 'default';
+        el.innerHTML = '<div class="node-label">' + (n.label || n.id) + '</div><div class="node-sub">' + (n.type === 'gateway' ? 'Gateway' : (n.model || 'Worker')) + '</div>';
+        canvas.appendChild(el);
+    });
+
+    // Register nodes with jsPlumb
+    def.nodes.forEach(function(n) {
+        var nodeEl = document.getElementById('hist-' + n.id);
+        if (nodeEl) histPlumb.manage(nodeEl.id, nodeEl);
+    });
+
+    def.edges.forEach(function(e) {
+        if (e.from === e.to) return; // skip self-referencing edges
+        var fromEl = document.getElementById('hist-' + e.from);
+        var toEl = document.getElementById('hist-' + e.to);
+        if (!fromEl || !toEl) return;
+        try {
+            histPlumb.connect({
+                source: 'hist-' + e.from,
+                target: 'hist-' + e.to,
+                anchors: ['Bottom', 'Top']
+            });
+        } catch(ex) {}
+    });
+
+    setTimeout(function() { try { histPlumb.repaintEverything(); } catch(ex) {} }, 100);
+}
+
+function rollbackVersion(defId, version) {
+    if (!confirm(t('teditor.history.rollback_confirm').replace('{0}', version))) return;
+    showLoading(t('teditor.history.rollback_loading'));
+    fetch('/monitor/topology/api/definitions/' + defId + '/rollback/' + version, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: '{}'
+    })
+    .then(function(r) {
+        hideLoading();
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(def) {
+        if (!def) return;
+        showToast(t('teditor.history.rollback_success').replace('{0}', version), 'success');
+        // Switch to edit mode
+        currentDefId = def.id;
+        currentDef = def;
+        switchNavTab('editor');
+        loadEditTopology();
+    })
+    .catch(function(err) {
+        showToast(t('teditor.history.rollback_failed').replace('{0}', err.message), 'error');
+    });
+}
+
+function deleteVersion(defId, version) {
+    if (!confirm(t('teditor.history.delete_confirm').replace('{0}', version))) return;
+    fetch('/monitor/topology/api/definitions/' + defId + '/versions/' + version, {
+        method: 'DELETE',
+        headers: authHeaders()
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(resp) {
+        if (!resp) return;
+        if (resp.status === 'deleted') {
+            showToast(t('teditor.history.delete_success').replace('{0}', version), 'success');
+            loadAllHistory();
+        } else {
+            showToast(t('teditor.history.delete_failed'), 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast(t('teditor.history.delete_error').replace('{0}', err.message), 'error');
+    });
+}
+
+function deleteDraftDef(defId) {
+    if (!confirm(t('teditor.history.delete_draft_confirm'))) return;
+    fetch('/monitor/topology/api/definitions/' + defId, {
+        method: 'DELETE',
+        headers: authHeaders()
+    })
+    .then(function(r) {
+        if (handleAuthError(r)) return null;
+        return r.json();
+    })
+    .then(function(resp) {
+        if (!resp) return;
+        if (resp.status === 'deleted') {
+            showToast(t('teditor.history.delete_success').replace('{0}', ''), 'success');
+            loadAllHistory();
+        } else {
+            showToast(t('teditor.history.delete_failed'), 'error');
+        }
+    })
+    .catch(function(err) {
+        showToast(t('teditor.history.delete_error').replace('{0}', err.message), 'error');
+    });
+}
+
+// ======================================================================
+// INIT
+// ======================================================================
+loadI18n(function() {
+    applyI18n();
+    loadEditorData();
+});
+</script>
+</body>
+</html>
